@@ -1,0 +1,166 @@
+{
+  "theme": "light",
+  "project_name": "DonatariaSAT",
+  "target_audience": "Organizaciones sin fines de lucro en México (A.C., I.A.P., S.C.) - contadores y administradores de donatarias.",
+  "emotional_tone": "Corporativo, Elegante, Confiable y Estructurado. (Archetype: Swiss Utility + Organic Trust)",
+  "typography": {
+    "headings": {
+      "family": "Chivo",
+      "import": "@import url('https://fonts.googleapis.com/css2?family=Chivo:wght@300;400;700;900&display=swap');",
+      "weights": ["300", "400", "700", "900"],
+      "usage": "Use Chivo for all headings (Landing page H1-H6, Dashboard widget titles, Modal headers). Use 'tracking-tight' for large text."
+    },
+    "body": {
+      "family": "IBM Plex Sans",
+      "import": "@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap');",
+      "weights": ["400", "500", "600"],
+      "usage": "Use IBM Plex Sans for all body text, tables, numbers, and inputs. It provides excellent legibility for financial data."
+    }
+  },
+  "colors": {
+    "backgrounds": {
+      "main": "#F7F6F3",
+      "surface": "#FFFFFF",
+      "sidebar": "#111827",
+      "sidebar_hover": "#1F2937"
+    },
+    "brand": {
+      "primary": "#059669",
+      "primary_hover": "#047857",
+      "secondary_cfdi": "#7C3AED",
+      "secondary_cfdi_hover": "#6D28D9"
+    },
+    "text": {
+      "primary_on_light": "#111827",
+      "secondary_on_light": "#4B5563",
+      "primary_on_dark": "#F9FAFB",
+      "secondary_on_dark": "#9CA3AF"
+    },
+    "semantic": {
+      "success": "#16A34A",
+      "success_bg": "#DCFCE7",
+      "warning": "#F59E0B",
+      "warning_bg": "#FEF3C7",
+      "danger": "#DC2626",
+      "danger_bg": "#FEE2E2",
+      "info": "#2563EB",
+      "info_bg": "#DBEAFE"
+    },
+    "borders": {
+      "subtle": "#E5E7EB",
+      "dark": "#374151"
+    }
+  },
+  "visual_enhancers": {
+    "shadows": {
+      "card_default": "0 2px 10px rgba(0, 0, 0, 0.04)",
+      "card_hover": "0 10px 25px rgba(0, 0, 0, 0.08)",
+      "dropdown": "0 10px 30px rgba(0, 0, 0, 0.12)"
+    },
+    "border_radius": {
+      "card": "8px",
+      "button": "6px",
+      "input": "6px",
+      "badge": "9999px"
+    },
+    "surface_strategy": {
+      "dashboard_cards": "Flat white background (#FFFFFF) with a 1px solid border (#E5E7EB) and 'card_default' shadow. Maximum 8px border-radius.",
+      "sidebar": "Solid dark background (#111827) with no border on the right. High contrast text.",
+      "badges": "Pill-shaped (rounded-full) with semantic background and semantic text color (e.g., bg-red-100 text-red-700) and font-medium."
+    }
+  },
+  "layouts": {
+    "landing_page": {
+      "strategy": "The Tetris Grid. Asymmetric layout using grid-cols-1 md:grid-cols-12 with generous gap-8 to gap-12. Large hero text with tracking-tight. Ample negative space.",
+      "spacing": "py-24, px-8 to px-16. Containers must feel airy."
+    },
+    "dashboard": {
+      "strategy": "High Density Grid. grid-cols-1 md:grid-cols-4 or md:grid-cols-12 for complex layouts. Tight gap-6. Every pixel utilized, but cards must have p-6 internal padding to prevent cramped text.",
+      "sidebar": "Fixed left sidebar, w-64. Content area flex-1 with bg-[#F7F6F3]."
+    }
+  },
+  "components": {
+    "kpi_cards": {
+      "layout": "col-span-1 (in a 4-col grid)",
+      "styling": "bg-white border border-gray-200 rounded-lg p-6 shadow-[0_2px_10px_rgba(0,0,0,0.04)] hover:-translate-y-1 transition-transform duration-200",
+      "content": "Top right icon (muted), Large number value (IBM Plex Sans, text-3xl, font-semibold), Label (text-sm, text-gray-500), Trend indicator (green/red text with tiny arrow)."
+    },
+    "alerts": {
+      "critical_expense": "A prominent banner/card if admin expenses exceed 5%. Use semantic danger colors: bg-red-50 border-l-4 border-red-600 p-4 text-red-900. Include a clear CTA to 'Ver Informe'."
+    },
+    "charts": {
+      "library": "recharts",
+      "monthly_donations": "AreaChart or BarChart showing monthly donation volume. Use brand primary (#059669) for bars/lines. Remove grid lines except horizontal, and use dashed lines."
+    },
+    "fiscal_calendar": {
+      "styling": "List or grid of upcoming obligations. Use circular color badges (Semaforos): Red for < 5 days, Amber for < 15 days, Green for > 15 days."
+    },
+    "data_tables": {
+      "styling": "Shadcn Table. Clean rows with border-b border-gray-100. Table headers must be text-xs uppercase tracking-wider text-gray-500. Row hover state: bg-gray-50/50."
+    },
+    "cfdi_module": {
+      "styling": "Use the secondary accent color (#7C3AED) for primary actions within the CFDI module to distinguish it from general charity tasks."
+    },
+    "forms": {
+      "styling": "Shadcn UI forms. Labels text-sm font-medium text-gray-700. Inputs with border-gray-300 focus:ring-emerald-500 focus:border-emerald-500."
+    },
+    "transparency_report": {
+      "styling": "Include a Shadcn Progress bar. If the bar represents admin expenses (limit 5%), color the bar green up to 4%, amber up to 5%, and red if > 5%."
+    }
+  },
+  "motion": {
+    "hover_states": "All buttons must transition background color and text color (duration-200 ease-in-out). Cards lift slightly (-translate-y-1).",
+    "page_transitions": "Fade in content on load (opacity-0 to opacity-100, translate-y-4 to translate-y-0).",
+    "charts": "Animate chart rendering using Recharts default animations."
+  },
+  "icons": {
+    "library": "@phosphor-icons/react",
+    "usage": "Use Phosphor icons (Regular or Light weight) for dashboard sidebars and widgets to maintain a sophisticated, corporate look.",
+    "install_command": "yarn add @phosphor-icons/react"
+  },
+  "media": {
+    "images": [
+      {
+        "url": "https://images.unsplash.com/photo-1759255260844-0466c096de0f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODd8MHwxfHNlYXJjaHwyfHxtZXhpY28lMjBjaXR5JTIwYnVzaW5lc3MlMjBza3lsaW5lfGVufDB8fHx8MTc3NDMxMDEwOHww&ixlib=rb-4.1.0&q=85",
+        "category": "landing_hero",
+        "description": "Mexico City business skyline. Use as a subtle background for the landing page hero section, heavily overlaid with a dark or emerald tint, or as a side image."
+      },
+      {
+        "url": "https://images.pexels.com/photos/8297051/pexels-photo-8297051.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "category": "landing_feature_tax",
+        "description": "Confident woman working with calculator. Use for the 'Cumplimiento Fiscal' feature section."
+      },
+      {
+        "url": "https://images.pexels.com/photos/273671/pexels-photo-273671.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "category": "landing_feature_charity",
+        "description": "Contemporary corporate office. Use for the 'Gestión de Donatarias' or 'Transparencia' section."
+      }
+    ]
+  },
+  "accessibility": {
+    "contrast": "Ensure all text on the #F7F6F3 background has a minimum contrast ratio of 4.5:1. Primary buttons (#059669) must have white text.",
+    "testing": "All interactive elements MUST include a 'data-testid' attribute (e.g., data-testid='cfdi-submit-button').",
+    "focus": "Inputs and buttons must have visible focus rings (focus:ring-2 focus:ring-offset-1 focus:ring-emerald-500)."
+  },
+  "instructions_to_main_agent": [
+    "Use standard HTML tags (div, section) heavily stylized with Tailwind for the landing page layout.",
+    "Use Shadcn UI components for all dashboard interactivity (Dialogs, Tables, Dropdowns, Progress, Forms).",
+    "Build the dashboard layout with a fixed left sidebar (bg-gray-900 text-white) and a main scrollable content area (bg-[#F7F6F3]).",
+    "Implement the 'Semaforo' (Traffic Light) for the Fiscal Calendar using colored circles (bg-green-500, bg-amber-500, bg-red-500).",
+    "For the critical alert of administrative expenses (>5%), use a high-visibility banner at the top of the dashboard main content area.",
+    "In the CFDI module, use the violet-600 color to distinguish it from the general emerald theme.",
+    "Use Recharts to build the 'Donativos por mes' chart, ensuring axes and tooltips are cleanly styled without heavy gridlines.",
+    "For icons, use @phosphor-icons/react. If unavailable, fallback to lucide-react, but maintain the thin/clean style.",
+    "Always apply hover animations (e.g. hover:shadow-lg, transition-all) to cards and buttons to make the UI feel responsive."
+  ],
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "Do not converge toward generic 'AI slop' aesthetics. Use specified fonts and layout rules.",
+    "Do not use transparent backgrounds under text where readability could drop (e.g., dropdowns).",
+    "Do not center-align app containers (.App { text-align: center; }).",
+    "Do not use emojis for icons. Use the specified icon library.",
+    "Use sonner for toast notifications.",
+    "Component files must use named exports. Pages must use default exports.",
+    "Ensure all interactive components have appropriate hover/active/focus states.",
+    "Use generous spacing (Tailwind scale) to avoid cramped layouts."
+  ]
+}
