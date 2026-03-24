@@ -1,7 +1,7 @@
 # DonatariaSAT - Product Requirements Document
 
 ## Problem Statement
-SaaS platform for "Donatarias Autorizadas" (Authorized charities in Mexico) to manage tax compliance, including Donors, Donations, CFDIs (tax receipts), Fiscal Calendar, Transparency Reports, AML Alerts, Reports, Workflows, automated notifications, and compliance metrics.
+SaaS platform for "Donatarias Autorizadas" (Authorized charities in Mexico) to manage tax compliance. Multi-tenant platform supporting multiple organizations per user, with Donors, Donations, CFDIs, Fiscal Calendar, Transparency Reports, AML Alerts, Reports/Workflows, Compliance Metrics, Audit Log, and automated notifications.
 
 ## Tech Stack
 - **Frontend**: React + Tailwind CSS + Shadcn/UI + Recharts
@@ -13,6 +13,13 @@ SaaS platform for "Donatarias Autorizadas" (Authorized charities in Mexico) to m
 
 ## Core Features (All Implemented)
 
+### Multi-Donataria (Multi-Tenant)
+- Users can belong to multiple organizations
+- Organization selector in sidebar with switch capability
+- Create new organizations from Configuracion page
+- Complete data isolation between organizations
+- Dashboard data refreshes on org switch
+
 ### Authentication
 - Email/password registration and login
 - Google OAuth via Emergent
@@ -22,7 +29,7 @@ SaaS platform for "Donatarias Autorizadas" (Authorized charities in Mexico) to m
 - KPIs: total donors, donations, CFDIs, obligations
 - Donation chart (Recharts)
 - Upcoming fiscal obligations
-- Compliance score mini-widget (links to /cumplimiento)
+- Compliance score mini-widget
 
 ### Donors (Donantes)
 - CRUD for physical/moral persons
@@ -36,12 +43,12 @@ SaaS platform for "Donatarias Autorizadas" (Authorized charities in Mexico) to m
 
 ### CFDIs (Tax Receipts)
 - Generation with MOCKED PAC timbrado (simulated UUID)
-- PDF generation via ReportLab
+- PDF generation via ReportLab (with org logo)
 - Status tracking (borrador/timbrado/cancelado)
 
 ### Fiscal Calendar (Calendario)
 - Auto-generated fiscal obligations
-- Traffic light indicators (verde/amarillo/rojo)
+- Traffic light indicators
 - Status management
 
 ### Transparency Reports
@@ -49,83 +56,96 @@ SaaS platform for "Donatarias Autorizadas" (Authorized charities in Mexico) to m
 - PDF generation
 
 ### AML Alerts (Motor de Alertas)
-- Configurable alert rules (threshold, keywords, risk level)
-- Alert management (nueva/en_revision/resuelta/descartada)
+- Configurable alert rules
+- Alert management
 - Stats dashboard, CSV export
 
 ### Reports (Reportes UIF/SAT)
-- Report generation (STR/SAR, operations, PEP, monthly)
-- Report templates with periodicity
+- Report generation from templates
+- PDF generation and download
 - Status workflow (borrador/enviado/acuse_recibido)
+- Template management with "Generar Reporte" action
 
 ### Workflows (Automatización)
-- Event-based triggers (alerts, reports, donors, donations)
-- Configurable conditions and actions (email, create alert)
+- Event-based triggers
+- Configurable conditions and actions
 
-### Compliance Metrics (Cumplimiento) - NEW
-- Score de cumplimiento (0-100%) con indicador circular visual
-- Gráfica de barras: % de obligaciones cumplidas por mes
-- Semáforo: excelente (>80%), bueno (60-80%), regular (40-60%), critico (<40%)
-- Desglose por tipo de obligación con barras de progreso
-- Tendencia histórica del score (últimos 6 meses)
-- Tabla de obligaciones próximas a vencer (30 días)
-- PDF profesional para auditores del SAT
-- Mini-widget en Dashboard principal
+### Compliance Metrics (Cumplimiento)
+- Score (0-100%) with visual indicator
+- Monthly chart, type breakdown, trend
+- PDF export for auditors
+- Dashboard mini-widget
+
+### Audit Log (Bitácora)
+- Automatic tracking: create/update/delete donantes, donativos, CFDIs, reportes, timbrado, org creation
+- Page with filterable table (entity, action)
+- Pagination
+- CSV export
+
+### Organization Logo
+- Upload PNG/JPG/WebP (max 2MB)
+- Appears in all generated PDFs
+- Managed from Configuracion page
 
 ### Automated Notifications (Cron)
-- Background scheduler runs daily at 8:00 AM Mexico City time
-- Sends reminders for obligations at 7, 3, and 1 days before deadline
-- Manual trigger from Configuracion page
-- Status endpoint: GET /api/cron/status
+- Daily scheduler at 8:00 AM Mexico City time
+- Reminders at 7, 3, 1 days before deadline
+- Manual trigger from Configuracion
 
 ### Configuration
 - Organization data management
+- Logo upload/delete
 - Email notification settings
-- Cron scheduler status and manual trigger
+- Cron scheduler status
+- Multi-donataria management
 
 ## MOCKED Integrations
-- **CFDI PAC Timbrado**: Returns simulated UUID (real PAC integration pending)
-- **Email Notifications**: Requires RESEND_API_KEY to activate
+- **CFDI PAC Timbrado**: Returns simulated UUID
+- **Email Notifications**: Requires RESEND_API_KEY
 
 ## Key API Endpoints
-- Auth: POST /api/auth/register, POST /api/auth/login, GET /api/auth/me
+- Auth: POST /api/auth/register, /login, GET /api/auth/me
+- Organizations: GET/POST /api/organizaciones, PUT /api/organizaciones/switch/{id}
+- Organization: GET/PUT /api/organizacion, POST /api/organizacion/logo
 - Donantes: GET/POST /api/donantes, PUT/DELETE /api/donantes/{id}
 - Donativos: GET/POST /api/donativos
 - CFDIs: GET/POST /api/cfdis, GET /api/cfdis/{id}/pdf
 - Obligaciones: GET/POST /api/obligaciones
 - Transparencia: GET/POST /api/transparencia, GET /api/transparencia/{id}/pdf
-- Alertas: GET /api/alertas, POST /api/alertas/reglas, GET /api/alertas/stats
-- Reportes: GET/POST /api/reportes, GET/POST /api/reportes/plantillas
+- Alertas: GET /api/alertas, POST /api/alertas/reglas
+- Reportes: GET/POST /api/reportes, GET /api/reportes/{id}/pdf
+- Plantillas: GET/POST /api/reportes/plantillas
 - Workflows: GET/POST /api/workflows
 - Cumplimiento: GET /api/cumplimiento, GET /api/cumplimiento/pdf
-- Export: GET /api/exportar/donantes, /api/exportar/donativos, /api/exportar/alertas
+- Auditoria: GET /api/auditoria, GET /api/auditoria/export
+- Export: GET /api/exportar/donantes, /donativos, /alertas
 - Cron: POST /api/cron/notificaciones-diarias, GET /api/cron/status
 - Dashboard: GET /api/dashboard/stats
-
-## Database Collections
-users, organizaciones, donantes, donativos, cfdis, obligaciones, informes_transparencia, alert_rules, alertas, reportes, report_templates, workflows
 
 ## Test Credentials
 - Email: test@donataria.org
 - Password: Test1234!
 
-## Completed Tasks
+## Completed Tasks (All Tested - 6 iterations, 100%)
 - [x] MVP Setup (FastAPI + React + MongoDB)
 - [x] Auth (JWT + Google OAuth)
 - [x] CRUD: Donors, Donations, CFDIs, Fiscal Obligations
-- [x] PDF Generation (Tax Receipts, Transparency Reports)
+- [x] PDF Generation (Tax Receipts, Transparency, Reports, Compliance)
 - [x] Email notifications (Resend integration)
 - [x] AML Alerts backend + frontend
 - [x] Reports/Workflows backend + frontend
+- [x] Report PDF download
+- [x] Report templates with "Generar Reporte" action
 - [x] CSV/Excel export (Donantes, Donativos, Alertas)
 - [x] Daily cron scheduler for fiscal reminders
-- [x] Cron status UI in Configuracion page
-- [x] Fix frontend crash (DonantesPage.jsx syntax error)
-- [x] Compliance Metrics Panel (score, charts, PDF, dashboard widget)
+- [x] Compliance Metrics Panel
+- [x] Organization logo upload (shown in all PDFs)
+- [x] Multi-donataria (multi-tenant)
+- [x] Audit log module (Bitácora)
 
 ## Pending / Future Tasks
 - [ ] Real PAC integration for CFDI timbrado
 - [ ] Webhook endpoints for PAC status updates
-- [ ] Refactor server.py into separate route modules (2800+ lines)
-- [ ] User roles and permissions
-- [ ] Advanced dashboard analytics
+- [ ] Refactor server.py into separate route modules (3400+ lines)
+- [ ] User roles and permissions per organization
+- [ ] Advanced analytics dashboard
