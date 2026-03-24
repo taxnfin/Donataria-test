@@ -223,6 +223,129 @@ class DashboardStats(BaseModel):
     obligaciones_proximas: List[dict]
     alerta_gastos: Optional[dict] = None
 
+# ==================== AML ALERTS MODELS ====================
+
+class AlertRule(BaseModel):
+    rule_id: str
+    organizacion_id: str
+    nombre: str
+    descripcion: Optional[str] = None
+    tipo_regla: str  # umbral_monto, nivel_riesgo_donante, keywords_descripcion, patron_fraccionamiento
+    severidad: str = "media"  # baja, media, alta, critica
+    condiciones: dict  # {monto_minimo: 100000, keywords: [...], etc}
+    activa: bool = True
+    veces_activada: int = 0
+    created_at: datetime
+    updated_at: datetime
+
+class AlertRuleCreate(BaseModel):
+    nombre: str
+    descripcion: Optional[str] = None
+    tipo_regla: str
+    severidad: str = "media"
+    condiciones: dict
+    activa: bool = True
+
+class Alert(BaseModel):
+    alert_id: str
+    organizacion_id: str
+    rule_id: Optional[str] = None
+    tipo: str  # umbral_excedido, pep_detectado, screening_positivo, fraccionamiento, keywords_sospechosos
+    severidad: str  # baja, media, alta, critica
+    titulo: str
+    descripcion: str
+    donante_id: Optional[str] = None
+    donante_nombre: Optional[str] = None
+    donativo_id: Optional[str] = None
+    monto: Optional[float] = None
+    estado: str = "nueva"  # nueva, en_revision, resuelta, descartada
+    tags: List[str] = []
+    created_at: datetime
+    updated_at: datetime
+
+class AlertCreate(BaseModel):
+    tipo: str
+    severidad: str
+    titulo: str
+    descripcion: str
+    donante_id: Optional[str] = None
+    donativo_id: Optional[str] = None
+    monto: Optional[float] = None
+    tags: List[str] = []
+
+# ==================== REPORTS MODELS ====================
+
+class ReportTemplate(BaseModel):
+    template_id: str
+    organizacion_id: str
+    nombre: str
+    tipo_reporte: str  # str_sar, operacion_relevante, operacion_inusual, donantes_pep, reporte_mensual
+    descripcion: Optional[str] = None
+    criterios: dict  # {severidades: [...], nivel_riesgo: [...], monto_minimo: 50000, solo_pep: false}
+    formato: str = "PDF"  # PDF, CSV, Excel
+    destinatario: str = "interno"  # UIF, SAT, interno
+    periodicidad: str = "manual"  # manual, diario, semanal, mensual
+    activa: bool = True
+    created_at: datetime
+    updated_at: datetime
+
+class ReportTemplateCreate(BaseModel):
+    nombre: str
+    tipo_reporte: str
+    descripcion: Optional[str] = None
+    criterios: dict = {}
+    formato: str = "PDF"
+    destinatario: str = "interno"
+    periodicidad: str = "manual"
+
+class Report(BaseModel):
+    report_id: str
+    organizacion_id: str
+    template_id: Optional[str] = None
+    titulo: str
+    tipo: str
+    descripcion: Optional[str] = None
+    destinatario: str
+    periodo_inicio: datetime
+    periodo_fin: datetime
+    estado: str = "borrador"  # borrador, enviado, acuse_recibido
+    datos: dict = {}
+    archivo_url: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+class ReportCreate(BaseModel):
+    template_id: Optional[str] = None
+    titulo: str
+    tipo: str
+    descripcion: Optional[str] = None
+    destinatario: str = "interno"
+    periodo_inicio: datetime
+    periodo_fin: datetime
+
+# ==================== WORKFLOW MODELS ====================
+
+class Workflow(BaseModel):
+    workflow_id: str
+    organizacion_id: str
+    nombre: str
+    descripcion: Optional[str] = None
+    trigger: str  # alerta_creada, reporte_actualizado, donante_actualizado, donativo_creado
+    condiciones: List[dict] = []  # [{campo: "severidad", operador: "equals", valor: "critica"}]
+    acciones: List[dict] = []  # [{tipo: "email", destinatario: "gerencia@org.com", asunto: "..."}]
+    activo: bool = True
+    ejecuciones: int = 0
+    created_at: datetime
+    updated_at: datetime
+
+class WorkflowCreate(BaseModel):
+    nombre: str
+    descripcion: Optional[str] = None
+    trigger: str
+    condiciones: List[dict] = []
+    acciones: List[dict] = []
+    activo: bool = True
+
 # ==================== HELPERS ====================
 
 def hash_password(password: str) -> str:
@@ -663,7 +786,7 @@ async def get_donativos(
     return donativos
 
 @api_router.post("/donativos")
-async def create_donativo(data: DonativoCreate, user: User = Depends(get_current_user)):
+async def create_donativo(data: DonativoCreate, background_tasks: BackgroundTasks, user: User = Depends(get_current_user)):
     if not user.organizacion_id:
         raise HTTPException(status_code=400, detail="No tiene organización asignada")
     
@@ -699,6 +822,12 @@ async def create_donativo(data: DonativoCreate, user: User = Depends(get_current
             "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}
         }
     )
+    
+    # Check AML alert rules in background
+    background_tasks.add_task(check_alert_rules, user.organizacion_id, donativo_doc, donante)
+    
+    # Trigger workflows for donativo_creado
+    background_tasks.add_task(trigger_workflows, user.organizacion_id, "donativo_creado", donativo_doc)
     
     return {k: v for k, v in donativo_doc.items() if k != "_id"}
 
@@ -1680,6 +1809,773 @@ async def get_notification_status():
         "email_configured": RESEND_AVAILABLE and bool(RESEND_API_KEY),
         "sender_email": SENDER_EMAIL if RESEND_API_KEY else None
     }
+
+# ==================== AML ALERT RULES ====================
+
+@api_router.get("/alertas/reglas")
+async def get_alert_rules(user: User = Depends(get_current_user)):
+    if not user.organizacion_id:
+        raise HTTPException(status_code=400, detail="No tiene organización asignada")
+    
+    reglas = await db.alert_rules.find(
+        {"organizacion_id": user.organizacion_id},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    
+    return reglas
+
+@api_router.post("/alertas/reglas")
+async def create_alert_rule(data: AlertRuleCreate, user: User = Depends(get_current_user)):
+    if not user.organizacion_id:
+        raise HTTPException(status_code=400, detail="No tiene organización asignada")
+    
+    rule_id = f"rule_{uuid.uuid4().hex[:12]}"
+    now = datetime.now(timezone.utc).isoformat()
+    
+    doc = {
+        "rule_id": rule_id,
+        "organizacion_id": user.organizacion_id,
+        **data.model_dump(),
+        "veces_activada": 0,
+        "created_at": now,
+        "updated_at": now
+    }
+    
+    await db.alert_rules.insert_one(doc)
+    return {k: v for k, v in doc.items() if k != "_id"}
+
+@api_router.put("/alertas/reglas/{rule_id}")
+async def update_alert_rule(rule_id: str, data: AlertRuleCreate, user: User = Depends(get_current_user)):
+    result = await db.alert_rules.update_one(
+        {"rule_id": rule_id, "organizacion_id": user.organizacion_id},
+        {"$set": {**data.model_dump(), "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Regla no encontrada")
+    
+    rule = await db.alert_rules.find_one({"rule_id": rule_id}, {"_id": 0})
+    return rule
+
+@api_router.delete("/alertas/reglas/{rule_id}")
+async def delete_alert_rule(rule_id: str, user: User = Depends(get_current_user)):
+    result = await db.alert_rules.delete_one(
+        {"rule_id": rule_id, "organizacion_id": user.organizacion_id}
+    )
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Regla no encontrada")
+    return {"message": "Regla eliminada"}
+
+@api_router.put("/alertas/reglas/{rule_id}/toggle")
+async def toggle_alert_rule(rule_id: str, user: User = Depends(get_current_user)):
+    rule = await db.alert_rules.find_one(
+        {"rule_id": rule_id, "organizacion_id": user.organizacion_id},
+        {"_id": 0}
+    )
+    if not rule:
+        raise HTTPException(status_code=404, detail="Regla no encontrada")
+    
+    new_state = not rule.get("activa", True)
+    await db.alert_rules.update_one(
+        {"rule_id": rule_id},
+        {"$set": {"activa": new_state, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    return {"activa": new_state}
+
+# ==================== AML ALERTS ====================
+
+async def check_alert_rules(organizacion_id: str, donativo: dict, donante: dict):
+    """Check all active rules and generate alerts if conditions are met"""
+    rules = await db.alert_rules.find(
+        {"organizacion_id": organizacion_id, "activa": True},
+        {"_id": 0}
+    ).to_list(100)
+    
+    alerts_created = []
+    monto = donativo.get("monto", 0)
+    if donativo.get("moneda") != "MXN" and donativo.get("tipo_cambio"):
+        monto = monto * donativo["tipo_cambio"]
+    
+    for rule in rules:
+        should_alert = False
+        condiciones = rule.get("condiciones", {})
+        
+        if rule["tipo_regla"] == "umbral_monto":
+            monto_minimo = condiciones.get("monto_minimo", 100000)
+            if monto >= monto_minimo:
+                should_alert = True
+                titulo = f"Transacción supera umbral de ${monto_minimo:,.0f} MXN"
+                descripcion = f"Donación en efectivo que supera el umbral de reporte obligatorio de ${monto_minimo:,.0f} MXN establecido por la UIF."
+                tags = ["umbral excedido"]
+        
+        elif rule["tipo_regla"] == "nivel_riesgo_donante":
+            nivel_riesgo = donante.get("nivel_riesgo", "bajo")
+            niveles_alerta = condiciones.get("niveles", ["alto", "critico"])
+            if nivel_riesgo in niveles_alerta:
+                should_alert = True
+                titulo = f"Transacción con donante de {nivel_riesgo} riesgo"
+                descripcion = f"Donación de donante clasificado como {nivel_riesgo} riesgo."
+                tags = ["riesgo donante"]
+        
+        elif rule["tipo_regla"] == "keywords_descripcion":
+            keywords = condiciones.get("keywords", [])
+            notas = (donativo.get("notas") or "").lower()
+            descripcion_especie = (donativo.get("descripcion_especie") or "").lower()
+            texto = f"{notas} {descripcion_especie}"
+            for kw in keywords:
+                if kw.lower() in texto:
+                    should_alert = True
+                    titulo = f"Keyword sospechoso detectado: '{kw}'"
+                    descripcion = f"Se detectó la palabra clave '{kw}' en la descripción del donativo."
+                    tags = ["keywords sospechosos"]
+                    break
+        
+        if should_alert:
+            alert_id = f"alert_{uuid.uuid4().hex[:12]}"
+            now = datetime.now(timezone.utc).isoformat()
+            
+            alert_doc = {
+                "alert_id": alert_id,
+                "organizacion_id": organizacion_id,
+                "rule_id": rule["rule_id"],
+                "tipo": rule["tipo_regla"],
+                "severidad": rule["severidad"],
+                "titulo": titulo,
+                "descripcion": descripcion,
+                "donante_id": donante.get("donante_id"),
+                "donante_nombre": donante.get("nombre"),
+                "donativo_id": donativo.get("donativo_id"),
+                "monto": monto,
+                "estado": "nueva",
+                "tags": tags,
+                "created_at": now,
+                "updated_at": now
+            }
+            
+            await db.alerts.insert_one(alert_doc)
+            alerts_created.append(alert_id)
+            
+            # Update rule activation count
+            await db.alert_rules.update_one(
+                {"rule_id": rule["rule_id"]},
+                {"$inc": {"veces_activada": 1}}
+            )
+            
+            # Trigger workflows
+            await trigger_workflows(organizacion_id, "alerta_creada", alert_doc)
+    
+    return alerts_created
+
+@api_router.get("/alertas")
+async def get_alerts(
+    severidad: Optional[str] = None,
+    estado: Optional[str] = None,
+    search: Optional[str] = None,
+    user: User = Depends(get_current_user)
+):
+    if not user.organizacion_id:
+        raise HTTPException(status_code=400, detail="No tiene organización asignada")
+    
+    query = {"organizacion_id": user.organizacion_id}
+    if severidad and severidad != "todas":
+        query["severidad"] = severidad
+    if estado and estado != "todos":
+        query["estado"] = estado
+    if search:
+        query["$or"] = [
+            {"titulo": {"$regex": search, "$options": "i"}},
+            {"descripcion": {"$regex": search, "$options": "i"}},
+            {"donante_nombre": {"$regex": search, "$options": "i"}}
+        ]
+    
+    alerts = await db.alerts.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return alerts
+
+@api_router.post("/alertas")
+async def create_alert_manual(data: AlertCreate, user: User = Depends(get_current_user)):
+    if not user.organizacion_id:
+        raise HTTPException(status_code=400, detail="No tiene organización asignada")
+    
+    alert_id = f"alert_{uuid.uuid4().hex[:12]}"
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Get donante name if provided
+    donante_nombre = None
+    if data.donante_id:
+        donante = await db.donantes.find_one({"donante_id": data.donante_id}, {"_id": 0})
+        donante_nombre = donante.get("nombre") if donante else None
+    
+    doc = {
+        "alert_id": alert_id,
+        "organizacion_id": user.organizacion_id,
+        "rule_id": None,
+        **data.model_dump(),
+        "donante_nombre": donante_nombre,
+        "estado": "nueva",
+        "created_at": now,
+        "updated_at": now
+    }
+    
+    await db.alerts.insert_one(doc)
+    return {k: v for k, v in doc.items() if k != "_id"}
+
+@api_router.put("/alertas/{alert_id}/estado")
+async def update_alert_estado(alert_id: str, estado: str, user: User = Depends(get_current_user)):
+    valid_estados = ["nueva", "en_revision", "resuelta", "descartada"]
+    if estado not in valid_estados:
+        raise HTTPException(status_code=400, detail=f"Estado inválido. Opciones: {valid_estados}")
+    
+    result = await db.alerts.update_one(
+        {"alert_id": alert_id, "organizacion_id": user.organizacion_id},
+        {"$set": {"estado": estado, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Alerta no encontrada")
+    
+    return {"message": "Estado actualizado"}
+
+@api_router.get("/alertas/stats")
+async def get_alerts_stats(user: User = Depends(get_current_user)):
+    if not user.organizacion_id:
+        raise HTTPException(status_code=400, detail="No tiene organización asignada")
+    
+    org_id = user.organizacion_id
+    
+    total = await db.alerts.count_documents({"organizacion_id": org_id})
+    nuevas = await db.alerts.count_documents({"organizacion_id": org_id, "estado": "nueva"})
+    criticas = await db.alerts.count_documents({"organizacion_id": org_id, "severidad": "critica", "estado": "nueva"})
+    altas = await db.alerts.count_documents({"organizacion_id": org_id, "severidad": "alta", "estado": "nueva"})
+    
+    return {
+        "total": total,
+        "nuevas": nuevas,
+        "criticas": criticas,
+        "altas": altas
+    }
+
+# ==================== REPORT TEMPLATES ====================
+
+@api_router.get("/reportes/plantillas")
+async def get_report_templates(user: User = Depends(get_current_user)):
+    if not user.organizacion_id:
+        raise HTTPException(status_code=400, detail="No tiene organización asignada")
+    
+    templates = await db.report_templates.find(
+        {"organizacion_id": user.organizacion_id},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    
+    return templates
+
+@api_router.post("/reportes/plantillas")
+async def create_report_template(data: ReportTemplateCreate, user: User = Depends(get_current_user)):
+    if not user.organizacion_id:
+        raise HTTPException(status_code=400, detail="No tiene organización asignada")
+    
+    template_id = f"tpl_{uuid.uuid4().hex[:12]}"
+    now = datetime.now(timezone.utc).isoformat()
+    
+    doc = {
+        "template_id": template_id,
+        "organizacion_id": user.organizacion_id,
+        **data.model_dump(),
+        "activa": True,
+        "created_at": now,
+        "updated_at": now
+    }
+    
+    await db.report_templates.insert_one(doc)
+    return {k: v for k, v in doc.items() if k != "_id"}
+
+@api_router.put("/reportes/plantillas/{template_id}")
+async def update_report_template(template_id: str, data: ReportTemplateCreate, user: User = Depends(get_current_user)):
+    result = await db.report_templates.update_one(
+        {"template_id": template_id, "organizacion_id": user.organizacion_id},
+        {"$set": {**data.model_dump(), "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Plantilla no encontrada")
+    
+    template = await db.report_templates.find_one({"template_id": template_id}, {"_id": 0})
+    return template
+
+@api_router.delete("/reportes/plantillas/{template_id}")
+async def delete_report_template(template_id: str, user: User = Depends(get_current_user)):
+    result = await db.report_templates.delete_one(
+        {"template_id": template_id, "organizacion_id": user.organizacion_id}
+    )
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Plantilla no encontrada")
+    return {"message": "Plantilla eliminada"}
+
+# ==================== REPORTS ====================
+
+@api_router.get("/reportes")
+async def get_reports(
+    tipo: Optional[str] = None,
+    estado: Optional[str] = None,
+    user: User = Depends(get_current_user)
+):
+    if not user.organizacion_id:
+        raise HTTPException(status_code=400, detail="No tiene organización asignada")
+    
+    query = {"organizacion_id": user.organizacion_id}
+    if tipo:
+        query["tipo"] = tipo
+    if estado:
+        query["estado"] = estado
+    
+    reports = await db.reports.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return reports
+
+@api_router.post("/reportes")
+async def create_report(data: ReportCreate, user: User = Depends(get_current_user)):
+    if not user.organizacion_id:
+        raise HTTPException(status_code=400, detail="No tiene organización asignada")
+    
+    report_id = f"rep_{uuid.uuid4().hex[:12]}"
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # If template_id provided, get template criterios
+    template = None
+    if data.template_id:
+        template = await db.report_templates.find_one(
+            {"template_id": data.template_id, "organizacion_id": user.organizacion_id},
+            {"_id": 0}
+        )
+    
+    # Collect report data based on type and date range
+    report_data = await generate_report_data(
+        user.organizacion_id,
+        data.tipo,
+        data.periodo_inicio,
+        data.periodo_fin,
+        template.get("criterios", {}) if template else {}
+    )
+    
+    doc = {
+        "report_id": report_id,
+        "organizacion_id": user.organizacion_id,
+        "template_id": data.template_id,
+        "titulo": data.titulo,
+        "tipo": data.tipo,
+        "descripcion": data.descripcion,
+        "destinatario": data.destinatario,
+        "periodo_inicio": data.periodo_inicio.isoformat(),
+        "periodo_fin": data.periodo_fin.isoformat(),
+        "estado": "borrador",
+        "datos": report_data,
+        "archivo_url": None,
+        "created_at": now,
+        "updated_at": now
+    }
+    
+    await db.reports.insert_one(doc)
+    
+    # Trigger workflows
+    await trigger_workflows(user.organizacion_id, "reporte_actualizado", doc)
+    
+    return {k: v for k, v in doc.items() if k != "_id"}
+
+async def generate_report_data(org_id: str, tipo: str, inicio: datetime, fin: datetime, criterios: dict) -> dict:
+    """Generate report data based on type and criteria"""
+    
+    # Get donativos in date range
+    donativos = await db.donativos.find(
+        {
+            "organizacion_id": org_id,
+            "fecha_donativo": {
+                "$gte": inicio.isoformat(),
+                "$lte": fin.isoformat()
+            }
+        },
+        {"_id": 0}
+    ).to_list(10000)
+    
+    # Get donantes
+    donantes = await db.donantes.find(
+        {"organizacion_id": org_id},
+        {"_id": 0}
+    ).to_list(10000)
+    donantes_map = {d["donante_id"]: d for d in donantes}
+    
+    # Get alerts if STR/SAR report
+    alertas = []
+    if tipo in ["str_sar", "operacion_inusual"]:
+        severidades = criterios.get("severidades", ["alta", "critica"])
+        alertas = await db.alerts.find(
+            {
+                "organizacion_id": org_id,
+                "severidad": {"$in": severidades}
+            },
+            {"_id": 0}
+        ).to_list(1000)
+    
+    # Filter by monto_minimo
+    monto_minimo = criterios.get("monto_minimo", 0)
+    donativos_filtrados = []
+    for d in donativos:
+        monto = d.get("monto", 0)
+        if d.get("moneda") != "MXN" and d.get("tipo_cambio"):
+            monto = monto * d["tipo_cambio"]
+        if monto >= monto_minimo:
+            d["donante"] = donantes_map.get(d.get("donante_id"), {})
+            donativos_filtrados.append(d)
+    
+    # Calculate totals
+    total_monto = sum(d.get("monto", 0) for d in donativos_filtrados)
+    
+    return {
+        "total_transacciones": len(donativos_filtrados),
+        "total_monto": total_monto,
+        "transacciones": donativos_filtrados[:100],  # Limit for response
+        "alertas": alertas[:50],
+        "periodo": f"{inicio.strftime('%d/%m/%Y')} - {fin.strftime('%d/%m/%Y')}"
+    }
+
+@api_router.put("/reportes/{report_id}/estado")
+async def update_report_estado(report_id: str, estado: str, user: User = Depends(get_current_user)):
+    valid_estados = ["borrador", "enviado", "acuse_recibido"]
+    if estado not in valid_estados:
+        raise HTTPException(status_code=400, detail=f"Estado inválido. Opciones: {valid_estados}")
+    
+    result = await db.reports.update_one(
+        {"report_id": report_id, "organizacion_id": user.organizacion_id},
+        {"$set": {"estado": estado, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Reporte no encontrado")
+    
+    # Trigger workflows
+    report = await db.reports.find_one({"report_id": report_id}, {"_id": 0})
+    await trigger_workflows(user.organizacion_id, "reporte_actualizado", report)
+    
+    return {"message": "Estado actualizado"}
+
+@api_router.delete("/reportes/{report_id}")
+async def delete_report(report_id: str, user: User = Depends(get_current_user)):
+    result = await db.reports.delete_one(
+        {"report_id": report_id, "organizacion_id": user.organizacion_id}
+    )
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Reporte no encontrado")
+    return {"message": "Reporte eliminado"}
+
+# ==================== WORKFLOWS ====================
+
+async def trigger_workflows(org_id: str, trigger_type: str, data: dict):
+    """Trigger matching workflows for an event"""
+    workflows = await db.workflows.find(
+        {"organizacion_id": org_id, "trigger": trigger_type, "activo": True},
+        {"_id": 0}
+    ).to_list(100)
+    
+    for wf in workflows:
+        # Check conditions
+        conditions_met = True
+        for cond in wf.get("condiciones", []):
+            campo = cond.get("campo")
+            operador = cond.get("operador")
+            valor = cond.get("valor")
+            
+            data_valor = data.get(campo)
+            
+            if operador == "equals" and data_valor != valor:
+                conditions_met = False
+                break
+            elif operador == "contains" and valor not in str(data_valor):
+                conditions_met = False
+                break
+            elif operador == "greater_than" and (not data_valor or data_valor <= valor):
+                conditions_met = False
+                break
+        
+        if conditions_met:
+            # Execute actions
+            for action in wf.get("acciones", []):
+                if action.get("tipo") == "email" and RESEND_AVAILABLE and RESEND_API_KEY:
+                    try:
+                        await send_email_notification(
+                            to_email=action.get("destinatario"),
+                            subject=action.get("asunto", f"[DonatariaSAT] {trigger_type}"),
+                            html_content=generate_workflow_email_html(wf, data, action)
+                        )
+                    except Exception as e:
+                        logger.error(f"Workflow email error: {e}")
+                
+                elif action.get("tipo") == "crear_alerta":
+                    alert_id = f"alert_{uuid.uuid4().hex[:12]}"
+                    now = datetime.now(timezone.utc).isoformat()
+                    await db.alerts.insert_one({
+                        "alert_id": alert_id,
+                        "organizacion_id": org_id,
+                        "rule_id": None,
+                        "tipo": "workflow",
+                        "severidad": action.get("severidad", "media"),
+                        "titulo": action.get("titulo", f"Alerta de workflow: {wf['nombre']}"),
+                        "descripcion": action.get("descripcion", ""),
+                        "estado": "nueva",
+                        "tags": ["workflow"],
+                        "created_at": now,
+                        "updated_at": now
+                    })
+            
+            # Update execution count
+            await db.workflows.update_one(
+                {"workflow_id": wf["workflow_id"]},
+                {"$inc": {"ejecuciones": 1}}
+            )
+
+def generate_workflow_email_html(workflow: dict, data: dict, action: dict) -> str:
+    """Generate HTML email for workflow notification"""
+    return f"""
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"></head>
+    <body style="font-family: Arial, sans-serif; padding: 20px;">
+        <h2 style="color: #7C3AED;">Notificación de Workflow</h2>
+        <p><strong>Workflow:</strong> {workflow.get('nombre', 'N/A')}</p>
+        <p><strong>Trigger:</strong> {workflow.get('trigger', 'N/A')}</p>
+        <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 20px 0;">
+        <p>{action.get('mensaje', 'Se ha ejecutado un workflow automático.')}</p>
+        <p style="color: #6B7280; font-size: 12px;">DonatariaSAT - Sistema de cumplimiento fiscal</p>
+    </body>
+    </html>
+    """
+
+@api_router.get("/workflows")
+async def get_workflows(user: User = Depends(get_current_user)):
+    if not user.organizacion_id:
+        raise HTTPException(status_code=400, detail="No tiene organización asignada")
+    
+    workflows = await db.workflows.find(
+        {"organizacion_id": user.organizacion_id},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    
+    return workflows
+
+@api_router.post("/workflows")
+async def create_workflow(data: WorkflowCreate, user: User = Depends(get_current_user)):
+    if not user.organizacion_id:
+        raise HTTPException(status_code=400, detail="No tiene organización asignada")
+    
+    workflow_id = f"wf_{uuid.uuid4().hex[:12]}"
+    now = datetime.now(timezone.utc).isoformat()
+    
+    doc = {
+        "workflow_id": workflow_id,
+        "organizacion_id": user.organizacion_id,
+        **data.model_dump(),
+        "ejecuciones": 0,
+        "created_at": now,
+        "updated_at": now
+    }
+    
+    await db.workflows.insert_one(doc)
+    return {k: v for k, v in doc.items() if k != "_id"}
+
+@api_router.put("/workflows/{workflow_id}")
+async def update_workflow(workflow_id: str, data: WorkflowCreate, user: User = Depends(get_current_user)):
+    result = await db.workflows.update_one(
+        {"workflow_id": workflow_id, "organizacion_id": user.organizacion_id},
+        {"$set": {**data.model_dump(), "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Workflow no encontrado")
+    
+    wf = await db.workflows.find_one({"workflow_id": workflow_id}, {"_id": 0})
+    return wf
+
+@api_router.delete("/workflows/{workflow_id}")
+async def delete_workflow(workflow_id: str, user: User = Depends(get_current_user)):
+    result = await db.workflows.delete_one(
+        {"workflow_id": workflow_id, "organizacion_id": user.organizacion_id}
+    )
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Workflow no encontrado")
+    return {"message": "Workflow eliminado"}
+
+@api_router.put("/workflows/{workflow_id}/toggle")
+async def toggle_workflow(workflow_id: str, user: User = Depends(get_current_user)):
+    wf = await db.workflows.find_one(
+        {"workflow_id": workflow_id, "organizacion_id": user.organizacion_id},
+        {"_id": 0}
+    )
+    if not wf:
+        raise HTTPException(status_code=404, detail="Workflow no encontrado")
+    
+    new_state = not wf.get("activo", True)
+    await db.workflows.update_one(
+        {"workflow_id": workflow_id},
+        {"$set": {"activo": new_state, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    return {"activo": new_state}
+
+# ==================== EXPORTS (CSV/Excel) ====================
+
+@api_router.get("/exportar/donantes")
+async def export_donantes_csv(user: User = Depends(get_current_user)):
+    if not user.organizacion_id:
+        raise HTTPException(status_code=400, detail="No tiene organización asignada")
+    
+    donantes = await db.donantes.find(
+        {"organizacion_id": user.organizacion_id},
+        {"_id": 0}
+    ).to_list(10000)
+    
+    # Generate CSV
+    output = io.StringIO()
+    output.write("Nombre,Tipo,RFC,Email,Telefono,Pais,Total Donativos,Num Donativos\n")
+    
+    for d in donantes:
+        row = [
+            d.get("nombre", ""),
+            d.get("tipo_persona", ""),
+            d.get("rfc", ""),
+            d.get("email", ""),
+            d.get("telefono", ""),
+            d.get("pais", ""),
+            str(d.get("total_donativos", 0)),
+            str(d.get("numero_donativos", 0))
+        ]
+        output.write(",".join([f'"{v}"' for v in row]) + "\n")
+    
+    output.seek(0)
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=donantes.csv"}
+    )
+
+@api_router.get("/exportar/donativos")
+async def export_donativos_csv(
+    year: Optional[int] = None,
+    user: User = Depends(get_current_user)
+):
+    if not user.organizacion_id:
+        raise HTTPException(status_code=400, detail="No tiene organización asignada")
+    
+    query = {"organizacion_id": user.organizacion_id}
+    
+    donativos = await db.donativos.find(query, {"_id": 0}).to_list(10000)
+    donantes = await db.donantes.find({"organizacion_id": user.organizacion_id}, {"_id": 0}).to_list(10000)
+    donantes_map = {d["donante_id"]: d for d in donantes}
+    
+    # Filter by year if specified
+    if year:
+        donativos = [d for d in donativos if d.get("fecha_donativo", "")[:4] == str(year)]
+    
+    output = io.StringIO()
+    output.write("Fecha,Donante,RFC,Monto,Moneda,Tipo,En Especie,CFDI\n")
+    
+    for d in donativos:
+        donante = donantes_map.get(d.get("donante_id"), {})
+        row = [
+            d.get("fecha_donativo", "")[:10],
+            donante.get("nombre", ""),
+            donante.get("rfc", ""),
+            str(d.get("monto", 0)),
+            d.get("moneda", "MXN"),
+            d.get("tipo_donativo", ""),
+            "Sí" if d.get("es_especie") else "No",
+            "Sí" if d.get("cfdi_id") else "No"
+        ]
+        output.write(",".join([f'"{v}"' for v in row]) + "\n")
+    
+    output.seek(0)
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=donativos_{year or 'todos'}.csv"}
+    )
+
+@api_router.get("/exportar/alertas")
+async def export_alertas_csv(user: User = Depends(get_current_user)):
+    if not user.organizacion_id:
+        raise HTTPException(status_code=400, detail="No tiene organización asignada")
+    
+    alertas = await db.alerts.find(
+        {"organizacion_id": user.organizacion_id},
+        {"_id": 0}
+    ).to_list(10000)
+    
+    output = io.StringIO()
+    output.write("Fecha,Titulo,Tipo,Severidad,Estado,Donante,Monto\n")
+    
+    for a in alertas:
+        row = [
+            a.get("created_at", "")[:10],
+            a.get("titulo", ""),
+            a.get("tipo", ""),
+            a.get("severidad", ""),
+            a.get("estado", ""),
+            a.get("donante_nombre", ""),
+            str(a.get("monto", ""))
+        ]
+        output.write(",".join([f'"{v}"' for v in row]) + "\n")
+    
+    output.seek(0)
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=alertas.csv"}
+    )
+
+# ==================== CRON / SCHEDULED TASKS ====================
+
+@api_router.post("/cron/notificaciones-diarias")
+async def run_daily_notifications(background_tasks: BackgroundTasks):
+    """Run daily notification check for all organizations (to be called by cron)"""
+    if not RESEND_AVAILABLE or not RESEND_API_KEY:
+        return {"message": "Email service not configured", "notifications_sent": 0}
+    
+    # Get all organizations
+    organizaciones = await db.organizaciones.find({}, {"_id": 0, "organizacion_id": 1}).to_list(1000)
+    
+    total_notifications = 0
+    
+    for org in organizaciones:
+        org_id = org["organizacion_id"]
+        
+        # Get users in this organization
+        users = await db.users.find({"organizacion_id": org_id}, {"_id": 0}).to_list(100)
+        
+        # Get organization details
+        organizacion = await db.organizaciones.find_one({"organizacion_id": org_id}, {"_id": 0})
+        
+        # Get upcoming obligations
+        now = datetime.now(timezone.utc)
+        obligaciones = await db.obligaciones.find(
+            {"organizacion_id": org_id, "estado": {"$in": ["pendiente", "en_proceso"]}},
+            {"_id": 0}
+        ).to_list(100)
+        
+        for obl in obligaciones:
+            fecha_limite = obl.get("fecha_limite")
+            if isinstance(fecha_limite, str):
+                fecha_limite = datetime.fromisoformat(fecha_limite.replace("Z", "+00:00"))
+            if fecha_limite.tzinfo is None:
+                fecha_limite = fecha_limite.replace(tzinfo=timezone.utc)
+            
+            days_remaining = (fecha_limite - now).days
+            
+            # Send notification for 7 and 1 day remaining
+            if days_remaining in [7, 1]:
+                for user in users:
+                    if user.get("email"):
+                        html_content = generate_obligation_reminder_html(obl, organizacion or {}, days_remaining)
+                        background_tasks.add_task(
+                            send_email_notification,
+                            to_email=user["email"],
+                            subject=f"[DonatariaSAT] {'URGENTE: ' if days_remaining == 1 else ''}Recordatorio: {obl.get('nombre', 'Obligación fiscal')} - {days_remaining} día(s)",
+                            html_content=html_content
+                        )
+                        total_notifications += 1
+    
+    return {"message": f"Cron ejecutado", "notifications_queued": total_notifications}
 
 # ==================== ROOT ====================
 

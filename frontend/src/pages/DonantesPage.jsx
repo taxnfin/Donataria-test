@@ -43,7 +43,8 @@ import {
   MoreHorizontal,
   Eye,
   Edit,
-  Trash2
+  Trash2,
+  Download
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -54,6 +55,8 @@ import {
 import axios from "axios";
 import { API } from "../App";
 import { toast } from "sonner";
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 const DonantesPage = () => {
   const [donantes, setDonantes] = useState([]);
@@ -180,7 +183,15 @@ const DonantesPage = () => {
             </h1>
             <p className="text-gray-500">Gestiona tu base de donantes</p>
           </div>
-          <Dialog open={dialogOpen} onOpenChange={(open) => {
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => window.open(`${BACKEND_URL}/api/exportar/donantes`, '_blank')}
+              data-testid="export-donantes-btn"
+            >
+              <Download className="w-4 h-4 mr-2" /> Exportar CSV
+            </Button>
+            <Dialog open={dialogOpen} onOpenChange={(open) => {
             setDialogOpen(open);
             if (!open) resetForm();
           }}>

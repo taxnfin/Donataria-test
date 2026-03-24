@@ -16,6 +16,9 @@ import CFDIsPage from "./pages/CFDIsPage";
 import CalendarioPage from "./pages/CalendarioPage";
 import TransparenciaPage from "./pages/TransparenciaPage";
 import ConfiguracionPage from "./pages/ConfiguracionPage";
+import AlertasPage from "./pages/AlertasPage";
+import ReportesPage from "./pages/ReportesPage";
+import WorkflowsPage from "./pages/WorkflowsPage";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 export const API = `${BACKEND_URL}/api`;
@@ -224,6 +227,30 @@ function AppRouter() {
         element={
           <ProtectedRoute>
             <ConfiguracionPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/alertas"
+        element={
+          <ProtectedRoute>
+            <AlertasPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/reportes"
+        element={
+          <ProtectedRoute>
+            <ReportesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/workflows"
+        element={
+          <ProtectedRoute>
+            <WorkflowsPage />
           </ProtectedRoute>
         }
       />

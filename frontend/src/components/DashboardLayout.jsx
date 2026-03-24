@@ -22,7 +22,10 @@ import {
   LogOut,
   Menu,
   X,
-  ChevronRight
+  ChevronRight,
+  AlertTriangle,
+  FileBarChart,
+  Workflow
 } from "lucide-react";
 
 const DashboardLayout = ({ children }) => {
@@ -43,6 +46,9 @@ const DashboardLayout = ({ children }) => {
     { name: "CFDIs", href: "/cfdis", icon: FileText, accent: true },
     { name: "Calendario Fiscal", href: "/calendario", icon: Calendar },
     { name: "Transparencia", href: "/transparencia", icon: ClipboardList },
+    { name: "Alertas AML", href: "/alertas", icon: AlertTriangle, accent: "red" },
+    { name: "Reportes", href: "/reportes", icon: FileBarChart },
+    { name: "Workflows", href: "/workflows", icon: Workflow },
   ];
 
   const isActive = (href) => location.pathname === href;
@@ -91,9 +97,11 @@ const DashboardLayout = ({ children }) => {
                 onClick={() => setSidebarOpen(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                   active 
-                    ? item.accent 
-                      ? "bg-violet-600 text-white" 
-                      : "bg-emerald-600 text-white"
+                    ? item.accent === "red"
+                      ? "bg-red-600 text-white"
+                      : item.accent 
+                        ? "bg-violet-600 text-white" 
+                        : "bg-emerald-600 text-white"
                     : "text-gray-400 hover:bg-gray-800 hover:text-white"
                 }`}
                 data-testid={`nav-${item.name.toLowerCase().replace(' ', '-')}`}
