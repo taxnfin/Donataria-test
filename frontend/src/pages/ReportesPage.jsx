@@ -106,13 +106,21 @@ const ReportesPage = () => {
     }
   };
 
+  const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+
+  const handleDownloadPDF = (reportId) => {
+    window.open(`${BACKEND_URL}/api/reportes/${reportId}/pdf`, '_blank');
+  };
+
   const handleCreateReporte = async () => {
     try {
-      await axios.post(`${API}/reportes`, {
+      const payload = {
         ...reporteForm,
         periodo_inicio: reporteForm.periodo_inicio.toISOString(),
         periodo_fin: reporteForm.periodo_fin.toISOString()
-      }, { withCredentials: true });
+      };
+      if (reporteForm.template_id) payload.template_id = reporteForm.template_id;
+      await axios.post(`${API}/reportes`, payload, { withCredentials: true });
       
       toast.success("Reporte generado");
       setReporteDialogOpen(false);
@@ -165,6 +173,20 @@ const ReportesPage = () => {
     } catch (error) {
       toast.error("Error al eliminar plantilla");
     }
+  };
+
+  const handleUseTemplate = (plantilla) => {
+    setReporteForm({
+      titulo: `${plantilla.nombre} - ${new Date().toLocaleDateString('es-MX')}`,
+      tipo: plantilla.tipo_reporte,
+      descripcion: plantilla.descripcion || "",
+      destinatario: plantilla.destinatario,
+      periodo_inicio: new Date(new Date().setMonth(new Date().getMonth() - 1)),
+      periodo_fin: new Date(),
+      template_id: plantilla.template_id
+    });
+    setReporteDialogOpen(true);
+    setActiveTab("reportes");
   };
 
   const resetReporteForm = () => {
@@ -426,6 +448,9 @@ const ReportesPage = () => {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleDownloadPDF(reporte.report_id)} data-testid={`download-pdf-${reporte.report_id}`}>
+                                  <Download className="w-4 h-4 mr-2" /> Descargar PDF
+                                </DropdownMenuItem>
                                 {reporte.estado === "borrador" && (
                                   <DropdownMenuItem onClick={() => handleUpdateReporteEstado(reporte.report_id, "enviado")}>
                                     <Send className="w-4 h-4 mr-2" /> Marcar enviado
@@ -602,6 +627,9 @@ const ReportesPage = () => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleUseTemplate(plantilla)} data-testid={`use-template-${plantilla.template_id}`}>
+                              <FilePlus className="w-4 h-4 mr-2" /> Generar Reporte
+                            </DropdownMenuItem>
                             <DropdownMenuItem 
                               onClick={() => handleDeletePlantilla(plantilla.template_id)}
                               className="text-red-600"

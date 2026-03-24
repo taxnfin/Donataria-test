@@ -20,6 +20,7 @@ import AlertasPage from "./pages/AlertasPage";
 import ReportesPage from "./pages/ReportesPage";
 import WorkflowsPage from "./pages/WorkflowsPage";
 import CumplimientoPage from "./pages/CumplimientoPage";
+import AuditoriaPage from "./pages/AuditoriaPage";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 export const API = `${BACKEND_URL}/api`;
@@ -260,6 +261,14 @@ function AppRouter() {
         element={
           <ProtectedRoute>
             <CumplimientoPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/auditoria"
+        element={
+          <ProtectedRoute>
+            <AuditoriaPage />
           </ProtectedRoute>
         }
       />
