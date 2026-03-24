@@ -1,0 +1,160 @@
+<analysis>**original_problem_statement**: ayudame a crear este SAAS de Donatarias. PRODUCT REQUIREMENTS: Build a SaaS platform MVP for DonatariaSAT (Authorized charities in Mexico for tax compliance). Requires handling of Donors, Donations, CFDIs (tax receipts), Fiscal Calendar (Obligations), Transparency Reports, and a Dashboard. Latest feature requests include PDF generation, Email notifications (Resend), AML Alerts (Motor de Alertas), Reporting workflows (UIF/SAT), Export to CSV/Excel, and Cron jobs.
+
+**User's preferred language**: Spanish (You MUST respond to the user in Spanish only).
+
+**what currently exists?**: A fully functional backend (FastAPI + MongoDB) and frontend (React + Tailwind + Shadcn) MVP handling Auth, Dashboard, Donors, Donations, CFDIs, and Transparency Reports. PDF generation for Tax Receipts and Transparency reports is implemented. Resend email integration is added. Backend models and logic for AML Alerts and Workflows are created.
+
+**Last working item**:
+- Last item agent was working: Creating and integrating the frontend pages for AML Alerts (), Reports (), and Workflows (), along with CSV/Excel export buttons. After updating  to route these pages, the frontend crashed (Playwright timeout on login page due to white screen/render failure).
+- Status: IN PROGRESS / BLOCKED
+- Agent Testing Done: N
+- Which testing method agent to use?: screenshot tool / frontend testing agent (After fixing the React crash, verify UI rendering).
+
+**All Pending/In progress Issue list**:
+- Issue 1: Frontend Application Crash (White Screen / Render Failure) - P0
+   - Attempted fixes: Agent verified Webpack logs (only showed deprecation warnings), checked for  in , and looked at  imports. Failed to resolve before session ended.
+   - Next debug checklist: Check  (or run a new screenshot to get the latest browser console error). Look closely at imports in , , and . Ensure any Shadcn UI components used in these new files (e.g., , , , ) actually exist in  and have been exported correctly. Check  routing for undefined imports.
+   - Why fix this issue and what will be achieved with the fix?: The entire React application is currently inaccessible. Fixing this restores frontend functionality.
+   - Status: IN PROGRESS
+   - Is recurring issue?: N
+   - Should Test frontend/backend/both after fix?: Frontend
+   - Blocked on other issue: None
+
+**In progress Task List**:
+- Task 1: Implement AML Alerts, Reports, and Workflows UI - P1
+   - Where to resume: Fix the frontend crash, then verify that the newly added , , and  load correctly and interact properly with the newly built backend API endpoints.
+   - What will be achieved with this?: Users will be able to manage AML rules, view triggered alerts, and manage compliance workflows.
+   - Status: IN PROGRESS
+   - Should Test frontend/backend/both after fix?: Both
+   - Blocked on something: Issue 1 (Frontend Crash)
+
+- Task 2: CSV/Excel Export Functionality - P2
+   - Where to resume: Verify if the export buttons added to  and  actually trigger CSV downloads as expected.
+   - What will be achieved with this?: Fulfills user request to export table data.
+   - Status: TESTING PENDING
+   - Should Test frontend/backend/both after fix?: Frontend
+   - Blocked on something: Issue 1 (Frontend Crash)
+
+**Upcoming and Future Tasks**:
+Upcoming Tasks:
+- Configure cron job for sending automatic daily reminders/notifications for upcoming fiscal obligations (P1).
+- Real integration with a PAC (Proveedor Autorizado de Certificación) for CFDI timbrado (Currently runs in simulation mode) (P2).
+
+Future Tasks:
+- Webhook endpoints to receive status updates from external PAC.
+
+**Completed work in this session**:
+- Initial MVP Setup (FastAPI + React + MongoDB) (DONE)
+- Emergent Google Auth integration + JWT (DONE)
+- CRUD for Donors, Donations, CFDIs, Fiscal Obligations (DONE)
+- PDF Generation for Transparency Reports & CFDIs using WeasyPrint/ReportLab (DONE)
+- Email notifications integration using Resend (DONE)
+- Backend logic/endpoints for AML Alerts and Workflows (DONE)
+
+**Earlier issues found/mentioned but not fixed**:
+- Issue 1: Missing UI component dependencies
+   - Debug checklist: While building new pages, standard Shadcn components might have been used in code but not pulled into the workspace. Check if , , , , etc., are present in .
+   - Why to solve this issue and what will be achieved with this?: Prevents silent React render crashes (Uncaught ReferenceError or module not found).
+   - Should Test frontend/backend/both after fix: Frontend
+   - Is recurring issue?: Y
+
+**Known issue recurrence from previous fork**:
+- Issue recurrence in previous fork: None (Initial phase completed).
+- Recurrence count: 0
+- Status: NOT STARTED
+
+**Code Architecture**:
+
+
+**Key Technical Concepts**:
+React, FastAPI, MongoDB (Motor), Tailwind CSS, Shadcn/UI, WeasyPrint/ReportLab (PDFs), Resend (Emails).
+
+**key DB schema**:
+- users: 
+- donantes: 
+- donativos: 
+- cfdis: 
+- obligaciones: 
+- informes_transparencia: 
+- alert_rules: 
+- alertas: 
+
+**changes in tech stack**:
+- Added , ,  to Python backend for Notifications and PDFs.
+
+**All files of reference**:
+-  (Contains entire backend codebase, recently appended with Alertas and Workflows logic).
+-  (Contains frontend routing, recently updated to include new pages which might be causing the crash).
+- , ,  (New files causing potential React crash).
+
+**Areas that need refactoring**:
+-  is getting very large (2600+ lines). Might be beneficial to split into routers (, , ) if context window or maintenance becomes difficult.
+
+**key api endpoints**:
+- , 
+- , 
+- , 
+- 
+- 
+- 
+
+**Critical Info for New Agent**:
+- **Environment**: Backend API must prefix with . Frontend must use .
+- **UI Crash Debugging**: The frontend is currently failing to render. Webpack () is reporting zero hard errors, but Playwright () is timing out looking for elements, meaning React is throwing an Uncaught Error during runtime rendering. **Your first step MUST be to check the browser console logs generated in  or execute a quick  /  / screenshot script to capture the actual JS console error.**
+- **Integration Note**: CFDI timbrado is currently a Simulación returning a mocked UUID. The user eventually wants real integration with a PAC.
+- **Email config**: Resend is implemented in  using  python SDK.
+
+**documents and test reports created in this job**:
+- 
+- 
+- 
+
+**Last 10 User Messages and any pending HUMAN messages**:
+- *User*: Continue
+- *User*: Continue
+- *User*: Continue
+- *User*: (Provides updated task requirements) Configurar cron job para envío automático diario de recordatorios. Integración real con PAC cuando sea necesario. Agregar exportación a CSV/Excel para reportes, ademas creame alertas como estas, creame workflowa como este (Images provided).
+- *User*: si (Agreeing to agent's suggestion to add email notifications for deadlines).
+- *User*: Implementar generación de PDF para informes, Configurar notificaciones por email para vencimientos, Integración real con PAC cuando sea necesario. Mejora potencial: ... si
+- *User*: Tool outputs and bash results for various frontend/backend processes.
+
+**Project Health Check**:
+- Broken: Frontend React rendering (Crash on load).
+- Mocked: CFDI PAC Integration (Mocked UUID return).
+
+**3rd Party Integrations**:
+- Emergent Managed Google Auth — Requires Emergent Configuration (Internal)
+- Resend (Emails) — Requires User API Key ()
+
+**Testing status**:
+- Testing agent used after significant changes: YES (For iteration 1 MVP). NO (For Iteration 2 Alerts/Workflows).
+- Troubleshoot agent used after agent stuck in loop: NO
+- Test files created: , 
+- Known regressions: Frontend React App crashes completely after adding , , and .
+
+**Credentials to test flow**:
+- Test user: 
+- Pass (used by agent script): 
+
+**What agent forgot to execute**:
+- The agent forgot to ensure that Shadcn UI components referenced in the newly created frontend pages (, etc.) were properly imported or instantiated in the workspace before integrating them into .
+- The agent forgot to implement the requested **cron job** for daily email notifications (deferred to next action items).
+
+**Debugging checklist for current issue**:
+Issue: Frontend Application Crash (White screen on load, Playwright timeout)
+    Frontend files to check:
+    -  (Check if imports for new Pages match export types - default vs named)
+    - 
+    - 
+    - 
+    -  (Verify all imported components exist)
+    
+    Backend files to check: N/A
+    Database to check: N/A
+    
+    PAGE ERROR: Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: object. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+warning: %s
+
+%s
+ An error occurred in the <StrictMode> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. at https://assets.emergent.sh/scripts/emergent-main.js:38:30</analysis>

@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 import uuid
 
 class DonatariaSATTester:
-    def __init__(self, base_url="https://donor-portal-12.preview.emergentagent.com"):
+    def __init__(self, base_url="https://donataria-alertas.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.session_token = None
