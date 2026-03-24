@@ -5,6 +5,8 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Separator } from "../components/ui/separator";
+import { Switch } from "../components/ui/switch";
+import { Badge } from "../components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -19,7 +21,11 @@ import {
   Mail,
   Phone,
   MapPin,
-  Calendar
+  Calendar,
+  Bell,
+  Send,
+  CheckCircle2,
+  AlertTriangle
 } from "lucide-react";
 import axios from "axios";
 import { API } from "../App";
@@ -28,6 +34,9 @@ import { toast } from "sonner";
 const ConfiguracionPage = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [notificationStatus, setNotificationStatus] = useState(null);
+  const [sendingTest, setSendingTest] = useState(false);
+  const [sendingNotifications, setSendingNotifications] = useState(false);
   const [formData, setFormData] = useState({
     nombre: "",
     rfc: "",
@@ -39,7 +48,54 @@ const ConfiguracionPage = () => {
 
   useEffect(() => {
     fetchOrganizacion();
+    fetchNotificationStatus();
   }, []);
+
+  const fetchNotificationStatus = async () => {
+    try {
+      const response = await axios.get(`${API}/notifications/status`, {
+        withCredentials: true
+      });
+      setNotificationStatus(response.data);
+    } catch (error) {
+      console.error("Error fetching notification status:", error);
+    }
+  };
+
+  const handleSendTestEmail = async () => {
+    setSendingTest(true);
+    try {
+      const response = await axios.post(`${API}/notifications/send-test`, {}, {
+        withCredentials: true
+      });
+      if (response.data.status === "success") {
+        toast.success("Email de prueba enviado. Revisa tu bandeja de entrada.");
+      } else if (response.data.status === "skipped") {
+        toast.warning("El servicio de email no está configurado.");
+      } else {
+        toast.error("Error al enviar email de prueba.");
+      }
+    } catch (error) {
+      toast.error("Error al enviar email de prueba.");
+    } finally {
+      setSendingTest(false);
+    }
+  };
+
+  const handleSendNotifications = async () => {
+    setSendingNotifications(true);
+    try {
+      const response = await axios.post(`${API}/notifications/check-and-send`, {}, {
+        withCredentials: true
+      });
+      toast.success(response.data.message);
+    } catch (error) {
+      const message = error.response?.data?.detail || "Error al enviar notificaciones.";
+      toast.error(message);
+    } finally {
+      setSendingNotifications(false);
+    }
+  };
 
   const fetchOrganizacion = async () => {
     try {
@@ -269,6 +325,100 @@ const ConfiguracionPage = () => {
                 </p>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Notifications Card */}
+        <Card className="bg-white border-gray-100 shadow-[0_2px_10px_rgba(0,0,0,0.04)]">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Bell className="w-5 h-5 text-blue-600" />
+              </div>
+              <div className="flex-1">
+                <CardTitle style={{ fontFamily: 'Chivo, sans-serif' }}>
+                  Notificaciones por Email
+                </CardTitle>
+                <CardDescription>
+                  Recibe alertas cuando tus obligaciones fiscales estén próximas a vencer
+                </CardDescription>
+              </div>
+              {notificationStatus?.email_configured ? (
+                <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+                  <CheckCircle2 className="w-3 h-3 mr-1" /> Configurado
+                </Badge>
+              ) : (
+                <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">
+                  <AlertTriangle className="w-3 h-3 mr-1" /> No configurado
+                </Badge>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {notificationStatus?.email_configured ? (
+              <>
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-600">
+                    <strong>Email de envío:</strong> {notificationStatus.sender_email}
+                  </p>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={handleSendTestEmail}
+                    disabled={sendingTest}
+                    data-testid="send-test-email-btn"
+                  >
+                    {sendingTest ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                        Enviando...
+                      </div>
+                    ) : (
+                      <>
+                        <Mail className="w-4 h-4 mr-2" />
+                        Enviar Email de Prueba
+                      </>
+                    )}
+                  </Button>
+                  
+                  <Button
+                    className="bg-blue-600 hover:bg-blue-700"
+                    onClick={handleSendNotifications}
+                    disabled={sendingNotifications}
+                    data-testid="send-notifications-btn"
+                  >
+                    {sendingNotifications ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Enviando...
+                      </div>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4 mr-2" />
+                        Enviar Recordatorios Ahora
+                      </>
+                    )}
+                  </Button>
+                </div>
+                
+                <p className="text-sm text-gray-500">
+                  Se enviarán recordatorios para obligaciones que venzan en los próximos 15 días.
+                </p>
+              </>
+            ) : (
+              <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+                <p className="text-sm text-amber-800">
+                  <strong>Para activar las notificaciones:</strong>
+                </p>
+                <ol className="text-sm text-amber-700 mt-2 space-y-1 list-decimal list-inside">
+                  <li>Crea una cuenta en <a href="https://resend.com" target="_blank" rel="noopener noreferrer" className="underline">resend.com</a></li>
+                  <li>Obtén tu API Key desde el dashboard</li>
+                  <li>Configura las variables de entorno: RESEND_API_KEY y SENDER_EMAIL</li>
+                </ol>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

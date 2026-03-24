@@ -48,11 +48,14 @@ import {
   CheckCircle2,
   Clock,
   AlertTriangle,
-  Info
+  Info,
+  Download
 } from "lucide-react";
 import axios from "axios";
 import { API } from "../App";
 import { toast } from "sonner";
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 const CFDIsPage = () => {
   const [cfdis, setCfdis] = useState([]);
@@ -158,6 +161,10 @@ const CFDIsPage = () => {
       const message = error.response?.data?.detail || "Error al cancelar CFDI";
       toast.error(message);
     }
+  };
+
+  const handleDownloadPDF = (cfdiId) => {
+    window.open(`${BACKEND_URL}/api/cfdis/${cfdiId}/pdf`, '_blank');
   };
 
   const resetForm = () => {
@@ -425,6 +432,16 @@ const CFDIsPage = () => {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
+                          {cfdi.estado === "timbrado" && (
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleDownloadPDF(cfdi.cfdi_id)}
+                              data-testid={`download-pdf-${cfdi.cfdi_id}`}
+                            >
+                              <Download className="w-4 h-4 mr-1" /> PDF
+                            </Button>
+                          )}
                           {cfdi.estado === "borrador" && (
                             <Button 
                               size="sm" 

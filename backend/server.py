@@ -1,10 +1,12 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, Response, Request
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Response, Request, BackgroundTasks
 from fastapi.security import HTTPBearer
+from fastapi.responses import StreamingResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
+import asyncio
 from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional
@@ -13,6 +15,21 @@ from datetime import datetime, timezone, timedelta
 import bcrypt
 import jwt
 import httpx
+import io
+
+# PDF Generation
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
+from reportlab.lib.units import inch
+
+# Email notifications
+try:
+    import resend
+    RESEND_AVAILABLE = True
+except ImportError:
+    RESEND_AVAILABLE = False
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -26,6 +43,12 @@ db = client[os.environ['DB_NAME']]
 JWT_SECRET = os.environ.get('JWT_SECRET', 'donatariasat-secret-key-change-in-production')
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 24 * 7  # 7 days
+
+# Resend Email Configuration
+RESEND_API_KEY = os.environ.get('RESEND_API_KEY')
+SENDER_EMAIL = os.environ.get('SENDER_EMAIL', 'onboarding@resend.dev')
+if RESEND_AVAILABLE and RESEND_API_KEY:
+    resend.api_key = RESEND_API_KEY
 
 app = FastAPI(title="DonatariaSAT API")
 api_router = APIRouter(prefix="/api")
@@ -1210,6 +1233,452 @@ async def get_dashboard_stats(user: User = Depends(get_current_user)):
         "donativos_por_mes": donativos_chart,
         "obligaciones_proximas": obligaciones,
         "alerta_gastos": alerta_gastos
+    }
+
+# ==================== PDF GENERATION ====================
+
+def generate_informe_pdf(informe: dict, organizacion: dict) -> io.BytesIO:
+    """Generate PDF for transparency report"""
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.75*inch, bottomMargin=0.75*inch)
+    
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], fontSize=18, spaceAfter=20, textColor=colors.HexColor('#059669'))
+    heading_style = ParagraphStyle('CustomHeading', parent=styles['Heading2'], fontSize=14, spaceAfter=10, textColor=colors.HexColor('#111827'))
+    normal_style = ParagraphStyle('CustomNormal', parent=styles['Normal'], fontSize=11, spaceAfter=8)
+    
+    elements = []
+    
+    # Header
+    elements.append(Paragraph("INFORME DE TRANSPARENCIA", title_style))
+    elements.append(Paragraph(f"Ficha 19/ISR - Ejercicio Fiscal {informe.get('ejercicio_fiscal', '')}", heading_style))
+    elements.append(Spacer(1, 20))
+    
+    # Organization info
+    elements.append(Paragraph("DATOS DE LA ORGANIZACIÓN", heading_style))
+    org_data = [
+        ["Nombre:", organizacion.get('nombre', 'N/A')],
+        ["RFC:", organizacion.get('rfc', 'N/A')],
+        ["Rubro:", organizacion.get('rubro', 'N/A').capitalize()],
+    ]
+    org_table = Table(org_data, colWidths=[2*inch, 4*inch])
+    org_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 11),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+    ]))
+    elements.append(org_table)
+    elements.append(Spacer(1, 20))
+    
+    # Financial data
+    elements.append(Paragraph("INFORMACIÓN FINANCIERA", heading_style))
+    
+    def format_currency(value):
+        return f"${value:,.2f} MXN" if value else "$0.00 MXN"
+    
+    financial_data = [
+        ["Concepto", "Monto"],
+        ["Total donativos recibidos (efectivo)", format_currency(informe.get('total_donativos_recibidos', 0))],
+        ["Total donativos en especie", format_currency(informe.get('total_donativos_especie', 0))],
+        ["Total donativos otorgados a terceros", format_currency(informe.get('total_donativos_otorgados', 0))],
+        ["Total gastos de administración", format_currency(informe.get('total_gastos_admin', 0))],
+        ["Porcentaje gastos admin", f"{informe.get('porcentaje_gastos_admin', 0):.2f}%"],
+    ]
+    
+    financial_table = Table(financial_data, colWidths=[3.5*inch, 2.5*inch])
+    financial_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#059669')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+        ('TOPPADDING', (0, 0), (-1, -1), 10),
+        ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#E5E7EB')),
+        ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+    ]))
+    elements.append(financial_table)
+    elements.append(Spacer(1, 20))
+    
+    # Beneficiaries
+    elements.append(Paragraph("BENEFICIARIOS", heading_style))
+    elements.append(Paragraph(f"Número de beneficiarios atendidos: {informe.get('numero_beneficiarios', 0):,}", normal_style))
+    elements.append(Spacer(1, 15))
+    
+    # Activities description
+    if informe.get('descripcion_actividades'):
+        elements.append(Paragraph("DESCRIPCIÓN DE ACTIVIDADES", heading_style))
+        elements.append(Paragraph(informe.get('descripcion_actividades', ''), normal_style))
+        elements.append(Spacer(1, 15))
+    
+    # Legislative influence
+    elements.append(Paragraph("ACTIVIDADES DE INFLUENCIA EN LEGISLACIÓN", heading_style))
+    influencia = "Sí" if informe.get('influencia_legislacion') else "No"
+    elements.append(Paragraph(f"¿Realizó actividades que influyen en legislación? {influencia}", normal_style))
+    if informe.get('influencia_legislacion') and informe.get('detalle_influencia'):
+        elements.append(Paragraph(f"Detalle: {informe.get('detalle_influencia', '')}", normal_style))
+    elements.append(Spacer(1, 20))
+    
+    # Legal footer
+    elements.append(Paragraph("FUNDAMENTO LEGAL", heading_style))
+    elements.append(Paragraph("Este informe se presenta conforme a lo establecido en el Artículo 82 de la Ley del Impuesto Sobre la Renta (LISR) y la Ficha 19/ISR del Anexo 1-A de la Resolución Miscelánea Fiscal.", normal_style))
+    elements.append(Spacer(1, 10))
+    elements.append(Paragraph(f"Fecha de generación: {datetime.now().strftime('%d/%m/%Y %H:%M')}", 
+                              ParagraphStyle('Footer', parent=styles['Normal'], fontSize=9, textColor=colors.gray)))
+    
+    doc.build(elements)
+    buffer.seek(0)
+    return buffer
+
+def generate_cfdi_pdf(cfdi: dict, donante: dict, organizacion: dict) -> io.BytesIO:
+    """Generate PDF for CFDI"""
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.75*inch, bottomMargin=0.75*inch)
+    
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], fontSize=16, spaceAfter=15, textColor=colors.HexColor('#7C3AED'))
+    heading_style = ParagraphStyle('CustomHeading', parent=styles['Heading2'], fontSize=12, spaceAfter=8, textColor=colors.HexColor('#111827'))
+    normal_style = ParagraphStyle('CustomNormal', parent=styles['Normal'], fontSize=10, spaceAfter=6)
+    
+    elements = []
+    
+    # Header
+    elements.append(Paragraph("COMPROBANTE FISCAL DIGITAL POR INTERNET", title_style))
+    elements.append(Paragraph("CFDI de Donativo", heading_style))
+    elements.append(Spacer(1, 15))
+    
+    # CFDI Info
+    cfdi_data = [
+        ["Folio:", cfdi.get('folio', 'N/A')],
+        ["Estado:", cfdi.get('estado', 'N/A').upper()],
+        ["Fecha de emisión:", cfdi.get('fecha_emision', 'N/A')[:10] if cfdi.get('fecha_emision') else 'N/A'],
+    ]
+    if cfdi.get('uuid_fiscal'):
+        cfdi_data.append(["UUID Fiscal:", cfdi.get('uuid_fiscal')])
+    if cfdi.get('fecha_timbrado'):
+        cfdi_data.append(["Fecha timbrado:", cfdi.get('fecha_timbrado')[:10]])
+    
+    cfdi_table = Table(cfdi_data, colWidths=[1.5*inch, 4.5*inch])
+    cfdi_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+    ]))
+    elements.append(cfdi_table)
+    elements.append(Spacer(1, 15))
+    
+    # Emisor
+    elements.append(Paragraph("EMISOR (Donataria)", heading_style))
+    emisor_data = [
+        ["Nombre:", organizacion.get('nombre', 'N/A')],
+        ["RFC:", organizacion.get('rfc', 'N/A')],
+    ]
+    emisor_table = Table(emisor_data, colWidths=[1.5*inch, 4.5*inch])
+    emisor_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+    ]))
+    elements.append(emisor_table)
+    elements.append(Spacer(1, 10))
+    
+    # Receptor
+    elements.append(Paragraph("RECEPTOR (Donante)", heading_style))
+    receptor_data = [
+        ["Nombre:", donante.get('nombre', 'N/A')],
+        ["RFC:", donante.get('rfc', 'N/A') or 'XEXX010101000' if donante.get('es_extranjero') else donante.get('rfc', 'N/A')],
+        ["Tipo:", "Persona Moral" if donante.get('tipo_persona') == 'moral' else "Persona Física"],
+    ]
+    receptor_table = Table(receptor_data, colWidths=[1.5*inch, 4.5*inch])
+    receptor_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+    ]))
+    elements.append(receptor_table)
+    elements.append(Spacer(1, 15))
+    
+    # Donativo details
+    elements.append(Paragraph("DETALLE DEL DONATIVO", heading_style))
+    
+    def format_currency(value, currency="MXN"):
+        return f"${value:,.2f} {currency}" if value else "$0.00 MXN"
+    
+    donativo_data = [
+        ["Concepto", "Valor"],
+        ["Monto", format_currency(cfdi.get('monto', 0), cfdi.get('moneda', 'MXN'))],
+        ["Moneda", cfdi.get('moneda', 'MXN')],
+        ["Tipo de donativo", cfdi.get('tipo_donativo', 'no_oneroso').replace('_', ' ').capitalize()],
+    ]
+    
+    donativo_table = Table(donativo_data, colWidths=[2*inch, 4*inch])
+    donativo_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#7C3AED')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('TOPPADDING', (0, 0), (-1, -1), 8),
+        ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#E5E7EB')),
+    ]))
+    elements.append(donativo_table)
+    elements.append(Spacer(1, 15))
+    
+    # Leyenda obligatoria
+    elements.append(Paragraph("LEYENDA OBLIGATORIA", heading_style))
+    leyenda_style = ParagraphStyle('Leyenda', parent=styles['Normal'], fontSize=10, 
+                                    backColor=colors.HexColor('#FEF3C7'), 
+                                    borderPadding=10)
+    elements.append(Paragraph(cfdi.get('leyenda', 'El donante no recibe bienes o servicios a cambio del donativo otorgado.'), leyenda_style))
+    elements.append(Spacer(1, 15))
+    
+    # Legal footer
+    elements.append(Paragraph("Fundamento legal: Art. 29 y 29-A del CFF, Art. 86 Fracc. II LISR", 
+                              ParagraphStyle('Footer', parent=styles['Normal'], fontSize=9, textColor=colors.gray)))
+    
+    doc.build(elements)
+    buffer.seek(0)
+    return buffer
+
+@api_router.get("/transparencia/{informe_id}/pdf")
+async def download_informe_pdf(informe_id: str, user: User = Depends(get_current_user)):
+    """Download transparency report as PDF"""
+    informe = await db.informes_transparencia.find_one(
+        {"informe_id": informe_id, "organizacion_id": user.organizacion_id},
+        {"_id": 0}
+    )
+    if not informe:
+        raise HTTPException(status_code=404, detail="Informe no encontrado")
+    
+    organizacion = await db.organizaciones.find_one(
+        {"organizacion_id": user.organizacion_id},
+        {"_id": 0}
+    )
+    
+    pdf_buffer = generate_informe_pdf(informe, organizacion or {})
+    
+    filename = f"informe_transparencia_{informe['ejercicio_fiscal']}.pdf"
+    
+    return StreamingResponse(
+        pdf_buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+@api_router.get("/cfdis/{cfdi_id}/pdf")
+async def download_cfdi_pdf(cfdi_id: str, user: User = Depends(get_current_user)):
+    """Download CFDI as PDF"""
+    cfdi = await db.cfdis.find_one(
+        {"cfdi_id": cfdi_id, "organizacion_id": user.organizacion_id},
+        {"_id": 0}
+    )
+    if not cfdi:
+        raise HTTPException(status_code=404, detail="CFDI no encontrado")
+    
+    donante = await db.donantes.find_one(
+        {"donante_id": cfdi.get("donante_id")},
+        {"_id": 0}
+    )
+    
+    organizacion = await db.organizaciones.find_one(
+        {"organizacion_id": user.organizacion_id},
+        {"_id": 0}
+    )
+    
+    pdf_buffer = generate_cfdi_pdf(cfdi, donante or {}, organizacion or {})
+    
+    filename = f"cfdi_{cfdi['folio']}.pdf"
+    
+    return StreamingResponse(
+        pdf_buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+# ==================== EMAIL NOTIFICATIONS ====================
+
+class EmailNotification(BaseModel):
+    recipient_email: EmailStr
+    subject: str
+    html_content: str
+
+class NotificationPreferences(BaseModel):
+    email_enabled: bool = True
+    days_before_alert: int = 7
+
+async def send_email_notification(to_email: str, subject: str, html_content: str) -> dict:
+    """Send email notification using Resend"""
+    if not RESEND_AVAILABLE or not RESEND_API_KEY:
+        logger.warning("Resend not configured, skipping email notification")
+        return {"status": "skipped", "message": "Email service not configured"}
+    
+    params = {
+        "from": SENDER_EMAIL,
+        "to": [to_email],
+        "subject": subject,
+        "html": html_content
+    }
+    
+    try:
+        email = await asyncio.to_thread(resend.Emails.send, params)
+        logger.info(f"Email sent to {to_email}: {email.get('id')}")
+        return {"status": "success", "email_id": email.get("id")}
+    except Exception as e:
+        logger.error(f"Failed to send email to {to_email}: {str(e)}")
+        return {"status": "error", "message": str(e)}
+
+def generate_obligation_reminder_html(obligacion: dict, organizacion: dict, days_remaining: int) -> str:
+    """Generate HTML email for fiscal obligation reminder"""
+    urgency_color = "#DC2626" if days_remaining <= 7 else "#F59E0B" if days_remaining <= 15 else "#059669"
+    
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <style>
+            body {{ font-family: 'IBM Plex Sans', Arial, sans-serif; line-height: 1.6; color: #111827; margin: 0; padding: 0; }}
+            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+            .header {{ background-color: #111827; padding: 20px; text-align: center; }}
+            .header h1 {{ color: #059669; margin: 0; font-size: 24px; }}
+            .content {{ padding: 30px 20px; background-color: #F7F6F3; }}
+            .alert-box {{ background-color: white; border-left: 4px solid {urgency_color}; padding: 20px; margin: 20px 0; border-radius: 4px; }}
+            .urgency {{ display: inline-block; background-color: {urgency_color}; color: white; padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: bold; }}
+            .details {{ margin: 20px 0; }}
+            .details p {{ margin: 8px 0; }}
+            .footer {{ padding: 20px; text-align: center; font-size: 12px; color: #6B7280; }}
+            .btn {{ display: inline-block; background-color: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>DonatariaSAT</h1>
+            </div>
+            <div class="content">
+                <h2>Recordatorio de Obligación Fiscal</h2>
+                <p>Hola, {organizacion.get('nombre', 'Estimado usuario')}</p>
+                
+                <div class="alert-box">
+                    <span class="urgency">{"URGENTE" if days_remaining <= 7 else "PRÓXIMO" if days_remaining <= 15 else "PENDIENTE"}</span>
+                    <h3 style="margin: 15px 0 10px 0;">{obligacion.get('nombre', 'Obligación fiscal')}</h3>
+                    <p style="margin: 0; color: #6B7280;">{obligacion.get('descripcion', '')}</p>
+                </div>
+                
+                <div class="details">
+                    <p><strong>Fecha límite:</strong> {obligacion.get('fecha_limite', 'N/A')[:10] if obligacion.get('fecha_limite') else 'N/A'}</p>
+                    <p><strong>Días restantes:</strong> {days_remaining} día(s)</p>
+                    <p><strong>Fundamento legal:</strong> {obligacion.get('fundamento_legal', 'N/A')}</p>
+                </div>
+                
+                <p>Te recomendamos tomar acción pronto para evitar sanciones o recargos.</p>
+                
+            </div>
+            <div class="footer">
+                <p>Este es un correo automático de DonatariaSAT.</p>
+                <p>Plataforma de cumplimiento fiscal para donatarias autorizadas.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    return html
+
+@api_router.post("/notifications/send-test")
+async def send_test_notification(user: User = Depends(get_current_user)):
+    """Send a test notification email"""
+    if not user.email:
+        raise HTTPException(status_code=400, detail="Usuario sin email configurado")
+    
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"></head>
+    <body style="font-family: Arial, sans-serif; padding: 20px;">
+        <h2 style="color: #059669;">¡Notificaciones activadas!</h2>
+        <p>Hola {user.name},</p>
+        <p>Este es un correo de prueba de DonatariaSAT. Si recibes este mensaje, las notificaciones están funcionando correctamente.</p>
+        <p>Recibirás alertas automáticas cuando tus obligaciones fiscales estén próximas a vencer.</p>
+        <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 20px 0;">
+        <p style="color: #6B7280; font-size: 12px;">DonatariaSAT - Cumplimiento fiscal para donatarias</p>
+    </body>
+    </html>
+    """
+    
+    result = await send_email_notification(
+        to_email=user.email,
+        subject="[DonatariaSAT] Notificaciones activadas",
+        html_content=html_content
+    )
+    
+    return result
+
+@api_router.post("/notifications/check-and-send")
+async def check_and_send_notifications(background_tasks: BackgroundTasks, user: User = Depends(get_current_user)):
+    """Check upcoming obligations and send notifications"""
+    if not user.organizacion_id:
+        raise HTTPException(status_code=400, detail="No tiene organización asignada")
+    
+    # Get organization
+    organizacion = await db.organizaciones.find_one(
+        {"organizacion_id": user.organizacion_id},
+        {"_id": 0}
+    )
+    
+    # Get user for email
+    user_doc = await db.users.find_one(
+        {"user_id": user.user_id},
+        {"_id": 0}
+    )
+    
+    if not user_doc or not user_doc.get("email"):
+        raise HTTPException(status_code=400, detail="Usuario sin email configurado")
+    
+    # Get upcoming obligations (next 15 days)
+    now = datetime.now(timezone.utc)
+    upcoming_limit = now + timedelta(days=15)
+    
+    obligaciones = await db.obligaciones.find(
+        {
+            "organizacion_id": user.organizacion_id,
+            "estado": {"$in": ["pendiente", "en_proceso"]}
+        },
+        {"_id": 0}
+    ).to_list(100)
+    
+    notifications_sent = 0
+    
+    for obl in obligaciones:
+        fecha_limite = obl.get("fecha_limite")
+        if isinstance(fecha_limite, str):
+            fecha_limite = datetime.fromisoformat(fecha_limite.replace("Z", "+00:00"))
+        if fecha_limite.tzinfo is None:
+            fecha_limite = fecha_limite.replace(tzinfo=timezone.utc)
+        
+        days_remaining = (fecha_limite - now).days
+        
+        # Send notification for obligations within 15 days
+        if 0 <= days_remaining <= 15:
+            html_content = generate_obligation_reminder_html(obl, organizacion or {}, days_remaining)
+            
+            background_tasks.add_task(
+                send_email_notification,
+                to_email=user_doc["email"],
+                subject=f"[DonatariaSAT] Recordatorio: {obl.get('nombre', 'Obligación fiscal')} - {days_remaining} días",
+                html_content=html_content
+            )
+            notifications_sent += 1
+    
+    return {
+        "message": f"Se enviarán {notifications_sent} notificación(es)",
+        "notifications_queued": notifications_sent
+    }
+
+@api_router.get("/notifications/status")
+async def get_notification_status():
+    """Check if email notifications are configured"""
+    return {
+        "email_configured": RESEND_AVAILABLE and bool(RESEND_API_KEY),
+        "sender_email": SENDER_EMAIL if RESEND_API_KEY else None
     }
 
 # ==================== ROOT ====================

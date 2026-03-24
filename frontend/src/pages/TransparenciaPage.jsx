@@ -44,11 +44,14 @@ import {
   DollarSign,
   Users,
   Edit,
-  Send
+  Send,
+  Download
 } from "lucide-react";
 import axios from "axios";
 import { API } from "../App";
 import { toast } from "sonner";
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 const TransparenciaPage = () => {
   const [informes, setInformes] = useState([]);
@@ -115,6 +118,10 @@ const TransparenciaPage = () => {
       const message = error.response?.data?.detail || "Error al actualizar informe";
       toast.error(message);
     }
+  };
+
+  const handleDownloadPDF = (informeId) => {
+    window.open(`${BACKEND_URL}/api/transparencia/${informeId}/pdf`, '_blank');
   };
 
   const handlePresentar = async (informeId) => {
@@ -369,8 +376,15 @@ const TransparenciaPage = () => {
                   )}
 
                   {/* Actions */}
-                  {informe.estado === "borrador" && (
-                    <div className="flex justify-end">
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => handleDownloadPDF(informe.informe_id)}
+                      data-testid={`download-pdf-${informe.informe_id}`}
+                    >
+                      <Download className="w-4 h-4 mr-2" /> Descargar PDF
+                    </Button>
+                    {informe.estado === "borrador" && (
                       <Button
                         className="bg-emerald-600 hover:bg-emerald-700"
                         disabled={informe.porcentaje_gastos_admin > 5 || informe.progreso_completitud < 100}
@@ -379,8 +393,8 @@ const TransparenciaPage = () => {
                       >
                         <Send className="w-4 h-4 mr-2" /> Marcar como Presentado
                       </Button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             ))}
