@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../App";
 import { Button } from "./ui/button";
@@ -27,14 +27,49 @@ import {
   FileBarChart,
   Workflow,
   ShieldCheck,
-  ScrollText
+  ScrollText,
+  Building,
+  ChevronsUpDown,
+  Plus,
+  Check
 } from "lucide-react";
+import axios from "axios";
+import { API } from "../App";
+import { toast } from "sonner";
 
 const DashboardLayout = ({ children }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [orgs, setOrgs] = useState([]);
+  const [orgMenuOpen, setOrgMenuOpen] = useState(false);
+
+  useEffect(() => {
+    fetchOrgs();
+  }, [user?.organizacion_id]);
+
+  const fetchOrgs = async () => {
+    try {
+      const response = await axios.get(`${API}/organizaciones`, { withCredentials: true });
+      setOrgs(response.data);
+    } catch {
+      setOrgs([]);
+    }
+  };
+
+  const handleSwitchOrg = async (orgId) => {
+    try {
+      await axios.put(`${API}/organizaciones/switch/${orgId}`, {}, { withCredentials: true });
+      setOrgMenuOpen(false);
+      if (refreshUser) await refreshUser();
+      toast.success("Organización cambiada");
+      navigate("/dashboard");
+      window.location.reload();
+    } catch {
+      toast.error("Error al cambiar organización");
+    }
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -88,6 +123,65 @@ const DashboardLayout = ({ children }) => {
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {/* Organization Selector */}
+        {orgs.length > 0 && (
+          <div className="px-4 py-3 border-b border-gray-800">
+            <DropdownMenu open={orgMenuOpen} onOpenChange={setOrgMenuOpen}>
+              <DropdownMenuTrigger asChild>
+                <button 
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors text-left"
+                  data-testid="org-selector"
+                >
+                  <div className="w-8 h-8 bg-emerald-600/20 rounded-md flex items-center justify-center flex-shrink-0">
+                    <Building className="w-4 h-4 text-emerald-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white truncate">
+                      {orgs.find(o => o.activa)?.nombre || "Seleccionar"}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {orgs.find(o => o.activa)?.rfc || "RFC pendiente"}
+                    </p>
+                  </div>
+                  <ChevronsUpDown className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-60" align="start">
+                <DropdownMenuLabel className="text-xs text-gray-500 uppercase">Organizaciones</DropdownMenuLabel>
+                {orgs.map((org) => (
+                  <DropdownMenuItem
+                    key={org.organizacion_id}
+                    onClick={() => !org.activa && handleSwitchOrg(org.organizacion_id)}
+                    className="flex items-center gap-2 cursor-pointer"
+                    data-testid={`org-option-${org.organizacion_id}`}
+                  >
+                    <div className="w-6 h-6 bg-gray-100 rounded flex items-center justify-center flex-shrink-0">
+                      {org.logo_url ? (
+                        <img src={org.logo_url} alt="" className="w-5 h-5 object-contain rounded" />
+                      ) : (
+                        <Building className="w-3 h-3 text-gray-500" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm truncate">{org.nombre}</p>
+                    </div>
+                    {org.activa && <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => { setOrgMenuOpen(false); navigate("/configuracion?new_org=true"); }}
+                  className="cursor-pointer"
+                  data-testid="create-new-org"
+                >
+                  <Plus className="w-4 h-4 mr-2 text-gray-400" />
+                  <span className="text-sm">Nueva Organización</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
 
         {/* Navigation */}
         <nav className="p-4 space-y-1">

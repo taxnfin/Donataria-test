@@ -8,6 +8,15 @@ import { Separator } from "../components/ui/separator";
 import { Switch } from "../components/ui/switch";
 import { Badge } from "../components/ui/badge";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../components/ui/dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -30,7 +39,8 @@ import {
   Play,
   Upload,
   ImageIcon,
-  Trash2
+  Trash2,
+  Plus
 } from "lucide-react";
 import axios from "axios";
 import { API } from "../App";
@@ -46,6 +56,10 @@ const ConfiguracionPage = () => {
   const [runningCron, setRunningCron] = useState(false);
   const [logoUrl, setLogoUrl] = useState(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [newOrgDialogOpen, setNewOrgDialogOpen] = useState(false);
+  const [newOrgName, setNewOrgName] = useState("");
+  const [newOrgRfc, setNewOrgRfc] = useState("");
+  const [creatingOrg, setCreatingOrg] = useState(false);
   const [formData, setFormData] = useState({
     nombre: "",
     rfc: "",
@@ -79,6 +93,33 @@ const ConfiguracionPage = () => {
       toast.error("Error al ejecutar cron");
     } finally {
       setRunningCron(false);
+    }
+  };
+
+  const handleCreateOrg = async () => {
+    if (!newOrgName.trim()) {
+      toast.error("El nombre es obligatorio");
+      return;
+    }
+    setCreatingOrg(true);
+    try {
+      await axios.post(`${API}/organizaciones`, {
+        nombre: newOrgName,
+        rfc: newOrgRfc,
+        rubro: "asistencial",
+        direccion: "",
+        telefono: "",
+        email: ""
+      }, { withCredentials: true });
+      toast.success("Organización creada. Cambiando...");
+      setNewOrgDialogOpen(false);
+      setNewOrgName("");
+      setNewOrgRfc("");
+      window.location.reload();
+    } catch (error) {
+      toast.error("Error al crear organización");
+    } finally {
+      setCreatingOrg(false);
     }
   };
 
@@ -618,6 +659,76 @@ const ConfiguracionPage = () => {
                 </>
               )}
             </Button>
+          </CardContent>
+        </Card>
+
+        {/* Nueva Organización */}
+        <Card className="bg-white border-gray-100 shadow-[0_2px_10px_rgba(0,0,0,0.04)]">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Building className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <CardTitle style={{ fontFamily: 'Chivo, sans-serif' }}>
+                  Multi-Donataria
+                </CardTitle>
+                <CardDescription>
+                  Gestiona múltiples organizaciones desde una sola cuenta
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Dialog open={newOrgDialogOpen} onOpenChange={setNewOrgDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" data-testid="create-org-btn">
+                  <Building className="w-4 h-4 mr-2" />
+                  Crear Nueva Organización
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Nueva Organización</DialogTitle>
+                  <DialogDescription>
+                    Crea una nueva donataria autorizada. Los datos se pueden completar después en Configuración.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="org-name">Nombre de la Organización *</Label>
+                    <Input
+                      id="org-name"
+                      value={newOrgName}
+                      onChange={(e) => setNewOrgName(e.target.value)}
+                      placeholder="Ej: Fundación ABC"
+                      data-testid="new-org-name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="org-rfc">RFC (opcional)</Label>
+                    <Input
+                      id="org-rfc"
+                      value={newOrgRfc}
+                      onChange={(e) => setNewOrgRfc(e.target.value.toUpperCase())}
+                      placeholder="Ej: FAB123456XX0"
+                      data-testid="new-org-rfc"
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setNewOrgDialogOpen(false)}>Cancelar</Button>
+                  <Button 
+                    onClick={handleCreateOrg} 
+                    disabled={creatingOrg}
+                    className="bg-emerald-600 hover:bg-emerald-700"
+                    data-testid="submit-new-org"
+                  >
+                    {creatingOrg ? "Creando..." : "Crear Organización"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </CardContent>
         </Card>
       </div>

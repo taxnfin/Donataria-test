@@ -77,7 +77,7 @@ const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, checkAuth }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, checkAuth, refreshUser: checkAuth }}>
       {children}
     </AuthContext.Provider>
   );

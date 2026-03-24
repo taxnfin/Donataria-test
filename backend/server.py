@@ -81,6 +81,7 @@ class User(BaseModel):
     name: str
     picture: Optional[str] = None
     organizacion_id: Optional[str] = None
+    organizaciones_ids: List[str] = []
     created_at: datetime
 
 class Organizacion(BaseModel):
@@ -467,6 +468,7 @@ async def register(user_data: UserCreate, response: Response):
         "name": user_data.name,
         "password_hash": hash_password(user_data.password),
         "organizacion_id": organizacion_id,
+        "organizaciones_ids": [organizacion_id] if organizacion_id else [],
         "picture": None,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
@@ -513,6 +515,7 @@ async def login(credentials: UserLogin, response: Response):
         "email": user["email"],
         "name": user["name"],
         "organizacion_id": user.get("organizacion_id"),
+        "organizaciones_ids": user.get("organizaciones_ids", []),
         "picture": user.get("picture"),
         "token": token
     }
@@ -618,7 +621,8 @@ async def get_me(user: User = Depends(get_current_user)):
         "email": user.email,
         "name": user.name,
         "picture": user.picture,
-        "organizacion_id": user.organizacion_id
+        "organizacion_id": user.organizacion_id,
+        "organizaciones_ids": user.organizaciones_ids
     }
 
 @api_router.post("/auth/logout")
@@ -631,6 +635,74 @@ async def logout(request: Request, response: Response):
     return {"message": "Sesión cerrada"}
 
 # ==================== ORGANIZACION ROUTES ====================
+
+@api_router.get("/organizaciones")
+async def get_user_organizaciones(user: User = Depends(get_current_user)):
+    """Get all organizations the user belongs to"""
+    org_ids = user.organizaciones_ids or ([user.organizacion_id] if user.organizacion_id else [])
+    if not org_ids:
+        return []
+    
+    orgs = await db.organizaciones.find(
+        {"organizacion_id": {"$in": org_ids}},
+        {"_id": 0, "organizacion_id": 1, "nombre": 1, "rfc": 1, "logo_url": 1}
+    ).to_list(100)
+    
+    # Mark active org
+    for org in orgs:
+        org["activa"] = org["organizacion_id"] == user.organizacion_id
+    
+    return orgs
+
+@api_router.post("/organizaciones")
+async def create_new_organizacion(data: OrganizacionCreate, user: User = Depends(get_current_user)):
+    """Create a new organization and add the user to it"""
+    organizacion_id = f"org_{uuid.uuid4().hex[:12]}"
+    now = datetime.now(timezone.utc).isoformat()
+    
+    org_doc = {
+        "organizacion_id": organizacion_id,
+        "nombre": data.nombre,
+        "rfc": data.rfc,
+        "rubro": data.rubro,
+        "direccion": data.direccion,
+        "telefono": data.telefono,
+        "email": data.email,
+        "created_at": now
+    }
+    await db.organizaciones.insert_one(org_doc)
+    await create_default_obligations(organizacion_id)
+    
+    # Add org to user's list and switch to it
+    await db.users.update_one(
+        {"user_id": user.user_id},
+        {
+            "$addToSet": {"organizaciones_ids": organizacion_id},
+            "$set": {"organizacion_id": organizacion_id}
+        }
+    )
+    
+    await log_audit(organizacion_id, user.user_id, user.name, "crear", "organizacion", organizacion_id, {"nombre": data.nombre})
+    return {k: v for k, v in org_doc.items() if k != "_id"}
+
+@api_router.put("/organizaciones/switch/{organizacion_id}")
+async def switch_organizacion(organizacion_id: str, user: User = Depends(get_current_user)):
+    """Switch the active organization for the current user"""
+    org_ids = user.organizaciones_ids or ([user.organizacion_id] if user.organizacion_id else [])
+    
+    if organizacion_id not in org_ids:
+        raise HTTPException(status_code=403, detail="No tiene acceso a esta organización")
+    
+    org = await db.organizaciones.find_one({"organizacion_id": organizacion_id}, {"_id": 0})
+    if not org:
+        raise HTTPException(status_code=404, detail="Organización no encontrada")
+    
+    await db.users.update_one(
+        {"user_id": user.user_id},
+        {"$set": {"organizacion_id": organizacion_id}}
+    )
+    
+    return {"message": "Organización cambiada", "organizacion_id": organizacion_id, "nombre": org.get("nombre")}
 
 @api_router.get("/organizacion")
 async def get_organizacion(user: User = Depends(get_current_user)):
