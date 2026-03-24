@@ -330,6 +330,7 @@ const DonantesPage = () => {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         {/* Filters */}
