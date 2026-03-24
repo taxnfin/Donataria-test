@@ -25,7 +25,8 @@ import {
   ChevronRight,
   AlertTriangle,
   FileBarChart,
-  Workflow
+  Workflow,
+  ShieldCheck
 } from "lucide-react";
 
 const DashboardLayout = ({ children }) => {
@@ -49,6 +50,7 @@ const DashboardLayout = ({ children }) => {
     { name: "Alertas AML", href: "/alertas", icon: AlertTriangle, accent: "red" },
     { name: "Reportes", href: "/reportes", icon: FileBarChart },
     { name: "Workflows", href: "/workflows", icon: Workflow },
+    { name: "Cumplimiento", href: "/cumplimiento", icon: ShieldCheck, accent: "emerald" },
   ];
 
   const isActive = (href) => location.pathname === href;

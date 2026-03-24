@@ -14,7 +14,8 @@ import {
   Plus,
   ArrowRight,
   Calendar,
-  TrendingUp
+  TrendingUp,
+  ShieldCheck
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from "recharts";
 import axios from "axios";
@@ -23,6 +24,7 @@ import { toast } from "sonner";
 
 const DashboardPage = () => {
   const [stats, setStats] = useState(null);
+  const [compliance, setCompliance] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -31,10 +33,12 @@ const DashboardPage = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await axios.get(`${API}/dashboard/stats`, {
-        withCredentials: true
-      });
-      setStats(response.data);
+      const [statsRes, complianceRes] = await Promise.all([
+        axios.get(`${API}/dashboard/stats`, { withCredentials: true }),
+        axios.get(`${API}/cumplimiento`, { withCredentials: true }).catch(() => ({ data: null }))
+      ]);
+      setStats(statsRes.data);
+      setCompliance(complianceRes.data);
     } catch (error) {
       toast.error("Error al cargar estadísticas");
     } finally {
@@ -307,6 +311,44 @@ const DashboardPage = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Compliance Mini-Widget */}
+        {compliance && (
+          <Link to="/cumplimiento">
+            <Card className="bg-white border-gray-100 shadow-[0_2px_10px_rgba(0,0,0,0.04)] hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer" data-testid="compliance-widget">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-4">
+                  <div className={`w-14 h-14 rounded-full flex items-center justify-center ${
+                    compliance.score >= 80 ? "bg-emerald-50" :
+                    compliance.score >= 60 ? "bg-blue-50" :
+                    compliance.score >= 40 ? "bg-amber-50" : "bg-red-50"
+                  }`}>
+                    <span className={`text-lg font-bold ${
+                      compliance.score >= 80 ? "text-emerald-600" :
+                      compliance.score >= 60 ? "text-blue-600" :
+                      compliance.score >= 40 ? "text-amber-600" : "text-red-600"
+                    }`}>
+                      {compliance.score}%
+                    </span>
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                      <p className="font-medium text-gray-900">Score de Cumplimiento</p>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {compliance.resumen.cumplidas} de {compliance.resumen.total} obligaciones cumplidas
+                      {compliance.resumen.vencidas > 0 && (
+                        <span className="text-red-600 ml-1">({compliance.resumen.vencidas} vencidas)</span>
+                      )}
+                    </p>
+                  </div>
+                  <ArrowRight className="w-5 h-5 text-gray-400" />
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        )}
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
