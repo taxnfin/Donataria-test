@@ -25,7 +25,9 @@ import {
   Bell,
   Send,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  Clock,
+  Play
 } from "lucide-react";
 import axios from "axios";
 import { API } from "../App";
@@ -35,8 +37,10 @@ const ConfiguracionPage = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [notificationStatus, setNotificationStatus] = useState(null);
+  const [cronStatus, setCronStatus] = useState(null);
   const [sendingTest, setSendingTest] = useState(false);
   const [sendingNotifications, setSendingNotifications] = useState(false);
+  const [runningCron, setRunningCron] = useState(false);
   const [formData, setFormData] = useState({
     nombre: "",
     rfc: "",
@@ -49,7 +53,29 @@ const ConfiguracionPage = () => {
   useEffect(() => {
     fetchOrganizacion();
     fetchNotificationStatus();
+    fetchCronStatus();
   }, []);
+
+  const fetchCronStatus = async () => {
+    try {
+      const response = await axios.get(`${API}/cron/status`, { withCredentials: true });
+      setCronStatus(response.data);
+    } catch (error) {
+      console.error("Error fetching cron status:", error);
+    }
+  };
+
+  const handleRunCron = async () => {
+    setRunningCron(true);
+    try {
+      const response = await axios.post(`${API}/cron/notificaciones-diarias`, {}, { withCredentials: true });
+      toast.success(`Cron ejecutado. ${response.data.notifications_queued || 0} notificaciones en cola.`);
+    } catch (error) {
+      toast.error("Error al ejecutar cron");
+    } finally {
+      setRunningCron(false);
+    }
+  };
 
   const fetchNotificationStatus = async () => {
     try {
@@ -419,6 +445,70 @@ const ConfiguracionPage = () => {
                 </ol>
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Scheduler Card */}
+        <Card className="bg-white border-gray-100 shadow-[0_2px_10px_rgba(0,0,0,0.04)]">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-violet-100 rounded-lg flex items-center justify-center">
+                <Clock className="w-5 h-5 text-violet-600" />
+              </div>
+              <div className="flex-1">
+                <CardTitle style={{ fontFamily: 'Chivo, sans-serif' }}>
+                  Recordatorios Automáticos
+                </CardTitle>
+                <CardDescription>
+                  Envío diario de recordatorios para obligaciones fiscales próximas a vencer
+                </CardDescription>
+              </div>
+              {cronStatus?.scheduler_active ? (
+                <Badge className="bg-green-100 text-green-700 hover:bg-green-100" data-testid="cron-status-badge">
+                  <CheckCircle2 className="w-3 h-3 mr-1" /> Activo
+                </Badge>
+              ) : (
+                <Badge className="bg-gray-100 text-gray-600 hover:bg-gray-100" data-testid="cron-status-badge">
+                  <Clock className="w-3 h-3 mr-1" /> Inactivo
+                </Badge>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="p-4 bg-gray-50 rounded-lg space-y-2">
+              <p className="text-sm text-gray-600">
+                <strong>Horario:</strong> Todos los días a las 8:00 AM (hora Ciudad de México)
+              </p>
+              <p className="text-sm text-gray-600">
+                <strong>Notifica:</strong> Obligaciones con 7, 3 o 1 día(s) restantes
+              </p>
+              <p className="text-sm text-gray-600">
+                <strong>Email configurado:</strong>{" "}
+                {cronStatus?.email_configured ? (
+                  <span className="text-green-600 font-medium">Sí</span>
+                ) : (
+                  <span className="text-amber-600 font-medium">No (requiere RESEND_API_KEY)</span>
+                )}
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={handleRunCron}
+              disabled={runningCron}
+              data-testid="run-cron-btn"
+            >
+              {runningCron ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                  Ejecutando...
+                </div>
+              ) : (
+                <>
+                  <Play className="w-4 h-4 mr-2" />
+                  Ejecutar Cron Manualmente
+                </>
+              )}
+            </Button>
           </CardContent>
         </Card>
       </div>

@@ -2528,7 +2528,7 @@ async def export_alertas_csv(user: User = Depends(get_current_user)):
 
 @api_router.post("/cron/notificaciones-diarias")
 async def run_daily_notifications(background_tasks: BackgroundTasks):
-    """Run daily notification check for all organizations (to be called by cron)"""
+    """Run daily notification check for all organizations (to be called by cron or manually)"""
     if not RESEND_AVAILABLE or not RESEND_API_KEY:
         return {"message": "Email service not configured", "notifications_sent": 0}
     
@@ -2562,8 +2562,8 @@ async def run_daily_notifications(background_tasks: BackgroundTasks):
             
             days_remaining = (fecha_limite - now).days
             
-            # Send notification for 7 and 1 day remaining
-            if days_remaining in [7, 1]:
+            # Send notification for 7, 3 and 1 day remaining
+            if days_remaining in [7, 3, 1]:
                 for user in users:
                     if user.get("email"):
                         html_content = generate_obligation_reminder_html(obl, organizacion or {}, days_remaining)
@@ -2576,6 +2576,15 @@ async def run_daily_notifications(background_tasks: BackgroundTasks):
                         total_notifications += 1
     
     return {"message": f"Cron ejecutado", "notifications_queued": total_notifications}
+
+@api_router.get("/cron/status")
+async def get_scheduler_status():
+    """Check the status of the background scheduler"""
+    return {
+        "scheduler_active": _scheduler_task is not None and not _scheduler_task.done(),
+        "email_configured": RESEND_AVAILABLE and bool(RESEND_API_KEY),
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
 
 # ==================== ROOT ====================
 
@@ -2598,6 +2607,74 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ==================== BACKGROUND SCHEDULER ====================
+
+async def daily_notification_scheduler():
+    """Background task that runs daily notifications at 8:00 AM Mexico City time"""
+    while True:
+        try:
+            now = datetime.now(timezone.utc)
+            # Mexico City is UTC-6, so 8:00 AM = 14:00 UTC
+            target_hour_utc = 14
+            next_run = now.replace(hour=target_hour_utc, minute=0, second=0, microsecond=0)
+            if now >= next_run:
+                next_run += timedelta(days=1)
+            
+            wait_seconds = (next_run - now).total_seconds()
+            logging.info(f"[Scheduler] Next daily notification run in {wait_seconds/3600:.1f} hours at {next_run.isoformat()}")
+            await asyncio.sleep(wait_seconds)
+            
+            # Run the daily notifications
+            if RESEND_AVAILABLE and RESEND_API_KEY:
+                logging.info("[Scheduler] Running daily obligation notifications...")
+                organizaciones = await db.organizaciones.find({}, {"_id": 0, "organizacion_id": 1}).to_list(1000)
+                total = 0
+                now_check = datetime.now(timezone.utc)
+                for org in organizaciones:
+                    org_id = org["organizacion_id"]
+                    users = await db.users.find({"organizacion_id": org_id}, {"_id": 0}).to_list(100)
+                    organizacion = await db.organizaciones.find_one({"organizacion_id": org_id}, {"_id": 0})
+                    obligaciones = await db.obligaciones.find(
+                        {"organizacion_id": org_id, "estado": {"$in": ["pendiente", "en_proceso"]}},
+                        {"_id": 0}
+                    ).to_list(100)
+                    for obl in obligaciones:
+                        fecha_limite = obl.get("fecha_limite")
+                        if isinstance(fecha_limite, str):
+                            fecha_limite = datetime.fromisoformat(fecha_limite.replace("Z", "+00:00"))
+                        if fecha_limite.tzinfo is None:
+                            fecha_limite = fecha_limite.replace(tzinfo=timezone.utc)
+                        days_remaining = (fecha_limite - now_check).days
+                        if days_remaining in [7, 3, 1]:
+                            for user in users:
+                                if user.get("email"):
+                                    html_content = generate_obligation_reminder_html(obl, organizacion or {}, days_remaining)
+                                    await send_email_notification(
+                                        to_email=user["email"],
+                                        subject=f"[DonatariaSAT] {'URGENTE: ' if days_remaining == 1 else ''}Recordatorio: {obl.get('nombre', 'Obligación fiscal')} - {days_remaining} día(s)",
+                                        html_content=html_content
+                                    )
+                                    total += 1
+                logging.info(f"[Scheduler] Daily run complete. Notifications sent: {total}")
+            else:
+                logging.info("[Scheduler] Email service not configured, skipping notifications")
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            logging.error(f"[Scheduler] Error in daily scheduler: {e}")
+            await asyncio.sleep(3600)  # Wait 1 hour before retrying on error
+
+_scheduler_task = None
+
+@app.on_event("startup")
+async def startup_scheduler():
+    global _scheduler_task
+    _scheduler_task = asyncio.create_task(daily_notification_scheduler())
+    logging.info("[Scheduler] Daily notification scheduler started")
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
+    global _scheduler_task
+    if _scheduler_task:
+        _scheduler_task.cancel()
     client.close()
