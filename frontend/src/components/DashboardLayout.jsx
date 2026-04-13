@@ -32,7 +32,9 @@ import {
   ChevronsUpDown,
   Plus,
   Check,
-  BookOpen
+  BookOpen,
+  Scale,
+  Shield
 } from "lucide-react";
 import axios from "axios";
 import { API } from "../App";
@@ -99,8 +101,10 @@ const DashboardLayout = ({ children }) => {
     { name: "Reportes", href: "/reportes", icon: FileBarChart },
     { name: "Workflows", href: "/workflows", icon: Workflow },
     { name: "Cumplimiento", href: "/cumplimiento", icon: ShieldCheck, accent: "emerald" },
-    { name: "Auditoría", href: "/auditoria", icon: ScrollText },
-    { name: "Catálogo SAT", href: "/catalogo", icon: BookOpen },
+    { name: "Declaracion Anual", href: "/declaracion-anual", icon: Scale },
+    { name: "PLD / AML", href: "/pld", icon: Shield, accent: "red" },
+    { name: "Auditoria", href: "/auditoria", icon: ScrollText },
+    { name: "Catalogo SAT", href: "/catalogo", icon: BookOpen },
   ];
 
   const isActive = (href) => location.pathname === href;

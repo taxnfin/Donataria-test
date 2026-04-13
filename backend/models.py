@@ -276,3 +276,76 @@ class UserOrgRole(BaseModel):
 class RoleAssignment(BaseModel):
     user_email: str
     role: str  # "admin", "editor", "viewer"
+
+# ==================== DECLARACION ANUAL MODELS ====================
+class DeclaracionAnualCreate(BaseModel):
+    ejercicio_fiscal: int
+    # Ingresos
+    ingresos_donativos_efectivo: float = 0
+    ingresos_donativos_especie: float = 0
+    ingresos_cuotas_asociados: float = 0
+    ingresos_actividades_propias: float = 0
+    ingresos_actividades_no_relacionadas: float = 0
+    ingresos_intereses: float = 0
+    ingresos_otros: float = 0
+    # Deducciones
+    deducciones_operacion: float = 0
+    deducciones_administracion: float = 0
+    deducciones_financieros: float = 0
+    deducciones_otros: float = 0
+    # Remanente ficto
+    ficto_omision_ingresos: float = 0
+    ficto_compras_no_realizadas: float = 0
+    ficto_prestamos_socios: float = 0
+    ficto_gastos_no_deducibles: float = 0
+    # Notas
+    notas: Optional[str] = None
+
+class DeclaracionAnualUpdate(BaseModel):
+    ingresos_donativos_efectivo: Optional[float] = None
+    ingresos_donativos_especie: Optional[float] = None
+    ingresos_cuotas_asociados: Optional[float] = None
+    ingresos_actividades_propias: Optional[float] = None
+    ingresos_actividades_no_relacionadas: Optional[float] = None
+    ingresos_intereses: Optional[float] = None
+    ingresos_otros: Optional[float] = None
+    deducciones_operacion: Optional[float] = None
+    deducciones_administracion: Optional[float] = None
+    deducciones_financieros: Optional[float] = None
+    deducciones_otros: Optional[float] = None
+    ficto_omision_ingresos: Optional[float] = None
+    ficto_compras_no_realizadas: Optional[float] = None
+    ficto_prestamos_socios: Optional[float] = None
+    ficto_gastos_no_deducibles: Optional[float] = None
+    notas: Optional[str] = None
+    estado: Optional[str] = None
+
+# ==================== PLD/AML MODELS ====================
+class DonanteKYCUpdate(BaseModel):
+    nivel_riesgo: Optional[str] = None  # bajo, medio, alto, critico
+    es_pep: Optional[bool] = None
+    pep_cargo: Optional[str] = None
+    jurisdiccion_riesgo: Optional[str] = None  # bajo, medio, alto
+    beneficiario_controlador: Optional[str] = None
+    tiene_constancia_fiscal: Optional[bool] = None
+    tiene_identificacion: Optional[bool] = None
+    notas_kyc: Optional[str] = None
+
+class AvisoUIFCreate(BaseModel):
+    tipo_aviso: str  # "operacion_vulnerable", "operacion_inusual", "operacion_relevante"
+    numero_folio: Optional[str] = None
+    fecha_presentacion: Optional[str] = None
+    acuse_recepcion: Optional[str] = None
+    donante_id: Optional[str] = None
+    donativo_id: Optional[str] = None
+    monto: float = 0
+    descripcion: Optional[str] = None
+    estatus: str = "pendiente"  # pendiente, presentado, acusado
+
+class DueDiligenceCreate(BaseModel):
+    donante_id: str
+    tipo_revision: str  # "inicial", "periodica", "por_alerta", "por_monto"
+    resultado: str = "pendiente"  # pendiente, aprobado, rechazado, escalado
+    hallazgos: Optional[str] = None
+    documentos_revisados: List[str] = []
+    notas: Optional[str] = None

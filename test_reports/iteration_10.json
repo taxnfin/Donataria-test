@@ -1,0 +1,146 @@
+{
+  "summary": "Iteration 10 testing completed for Declaracion Anual (Titulo III LISR) and PLD/AML modules. Backend: 25/25 tests passed (100%). Frontend: All UI features working correctly including navigation, dashboard cards, tabs, and CRUD dialogs.",
+  
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Dashboard charts",
+        "issues": ["Console warning about chart width/height being -1 - minor rendering issue on initial load, does not affect functionality"]
+      }
+    ]
+  },
+  
+  "passed_tests": [
+    "GET /api/declaraciones - list declarations (200)",
+    "POST /api/declaraciones - create declaration with fiscal data (200)",
+    "GET /api/declaraciones/{id} - get declaration with calculated fields (200)",
+    "PUT /api/declaraciones/{id} - update declaration (200)",
+    "GET /api/declaraciones/auto-fill/{ejercicio} - auto-fill from existing data (200)",
+    "POST /api/declaraciones/{id}/presentar - mark as presented within 10% (200)",
+    "POST /api/declaraciones/{id}/presentar - reject when exceeds 10% (400)",
+    "GET /api/declaraciones/{id}/pdf - download PDF (200)",
+    "DELETE /api/declaraciones/{id} - delete declaration (200)",
+    "GET /api/pld/dashboard - PLD dashboard stats (200)",
+    "GET /api/pld/operaciones-vulnerables - detect ops >= 1605 UMAs (200)",
+    "GET /api/pld/avisos - list UIF notices (200)",
+    "POST /api/pld/avisos - create UIF notice (200)",
+    "PUT /api/pld/avisos/{id} - update UIF notice (200)",
+    "GET /api/pld/matriz-riesgo - risk matrix for all donors (200)",
+    "PUT /api/pld/kyc/{donante_id} - update donor KYC (200)",
+    "GET /api/pld/kyc-status - get KYC completion status (200)",
+    "GET /api/pld/due-diligence - list DD logs (200)",
+    "POST /api/pld/due-diligence - create DD entry (200)",
+    "POST /api/pld/due-diligence - reject invalid donante (404)",
+    "GET /api/declaraciones/{invalid_id} - returns 404",
+    "POST /api/declaraciones - reject duplicate ejercicio (400)",
+    "PUT /api/pld/avisos/{invalid_id} - returns 404",
+    "PUT /api/pld/kyc/{invalid_id} - returns 404",
+    "Frontend: Declaracion Anual page loads with Nueva Declaracion button",
+    "Frontend: Declaracion Anual dialog has year selector, auto-fill, and all form fields",
+    "Frontend: Navigation sidebar shows Declaracion Anual and PLD/AML links",
+    "Frontend: PLD page loads with 5 dashboard cards",
+    "Frontend: PLD page has 6 tabs (Dashboard AML, Ops. Vulnerables, Avisos UIF, Matriz Riesgo, KYC Donantes, Due Diligence)",
+    "Frontend: PLD Matriz Riesgo tab shows donor risk scores with Score/Nivel columns",
+    "Frontend: PLD KYC tab shows 11 donantes with completion status and Editar KYC buttons",
+    "Frontend: PLD Avisos UIF tab shows avisos table with Nuevo Aviso button",
+    "Frontend: PLD Due Diligence tab shows bitacora with Nueva Revision button"
+  ],
+  
+  "test_report_links": [
+    "/app/backend/tests/test_declaracion_pld.py",
+    "/app/test_reports/pytest/pytest_declaracion_pld.xml"
+  ],
+  
+  "action_items": [],
+  
+  "critical_code_review_comments": [
+    "Declaracion Anual module correctly implements 10% control validation for actividades no relacionadas",
+    "Auto-fill feature properly aggregates donativos by ejercicio fiscal",
+    "Remanente ficto calculation includes all 4 components (omision, compras, prestamos, gastos)",
+    "PDF generation includes all sections: Ingresos, Deducciones, Remanente, Control 10%",
+    "PLD dashboard aggregates stats from alerts, avisos, ops vulnerables, DD, and KYC",
+    "Matriz de riesgo auto-scores donors based on PEP, jurisdiction, amount, payment method, KYC",
+    "Operaciones vulnerables correctly uses 1605 UMAs threshold ($181,589.70 at UMA 113.14)",
+    "KYC update properly tracks kyc_updated_at timestamp",
+    "Due diligence validates donante exists before creating entry"
+  ],
+  
+  "updated_files": [
+    "/app/backend/tests/test_declaracion_pld.py"
+  ],
+  
+  "success_rate": {
+    "backend": "100% (25/25 tests passed)",
+    "frontend": "100% (all UI features working)"
+  },
+  
+  "test_credentials": {
+    "admin": {
+      "email": "test@donataria.org",
+      "password": "Test1234!"
+    }
+  },
+  
+  "seed_data_creation": "Created TEST_ prefixed declaraciones, avisos, and due diligence entries during tests (cleaned up after tests)",
+  
+  "retest_needed": false,
+  
+  "should_main_agent_self_test": false,
+  
+  "context_for_next_testing_agent": "Iteration 10 tested the new Declaracion Anual (Titulo III LISR) and PLD/AML modules. All CRUD operations work correctly. The 10% control validation properly rejects declarations where actividades no relacionadas exceed 10% of total ingresos. PLD dashboard shows 5 cards with aggregated stats. All 6 PLD tabs work: Dashboard AML, Ops. Vulnerables, Avisos UIF, Matriz Riesgo, KYC Donantes, Due Diligence. KYC has 11 donantes with edit buttons. CFDI timbrado remains MOCKED.",
+  
+  "mocked_apis": {
+    "CFDI_PAC_Integration": "CFDI timbrado (stamping) is MOCKED - returns simulated UUID",
+    "Email_Notifications": "Email notifications MOCKED - RESEND_API_KEY not configured"
+  },
+  
+  "declaracion_anual_summary": {
+    "features_tested": [
+      "CRUD operations (create, read, update, delete)",
+      "Auto-fill from existing donativos",
+      "10% control validation for actividades no relacionadas",
+      "Remanente ficto calculation",
+      "PDF generation with all sections",
+      "Duplicate ejercicio fiscal rejection"
+    ],
+    "calculations_verified": {
+      "total_ingresos": "Sum of all 7 income fields",
+      "total_deducciones": "Sum of all 4 deduction fields",
+      "remanente_distribuible": "total_ingresos - total_deducciones",
+      "remanente_ficto": "Sum of 4 ficto fields",
+      "control_10_porciento": "actividades_no_relacionadas / total_ingresos * 100"
+    }
+  },
+  
+  "pld_aml_summary": {
+    "features_tested": [
+      "Dashboard with 5 stat cards",
+      "6 tabs navigation",
+      "Operaciones vulnerables detection (>= 1605 UMAs)",
+      "Avisos UIF CRUD",
+      "Matriz de riesgo auto-scoring",
+      "KYC donantes update",
+      "Due diligence bitacora CRUD"
+    ],
+    "risk_scoring_factors": [
+      "PEP status (+40 points)",
+      "Jurisdiccion alto riesgo (+30 points)",
+      "Monto alto >= umbral (+20 points)",
+      "Pago en efectivo (+15 points)",
+      "Donante extranjero (+10 points)",
+      "KYC incompleto (+15 points)"
+    ],
+    "umbral_operacion_vulnerable": {
+      "umas": 1605,
+      "valor_uma_diario": 113.14,
+      "monto_mxn": 181589.70
+    }
+  }
+}
