@@ -1,92 +1,88 @@
 # DonatariaSAT - Product Requirements Document
 
 ## Problem Statement
-SaaS platform for "Donatarias Autorizadas" (Authorized charities in Mexico) to manage tax compliance. Multi-tenant platform supporting multiple organizations per user, with Donors, Donations, CFDIs, Fiscal Calendar, Transparency Reports, AML Alerts, Reports/Workflows, Compliance Metrics, Audit Log, Catalog of Authorized Charities, and automated notifications.
+Build a SaaS platform MVP for "DonatariaSAT" - a management system for authorized charities (donatarias autorizadas) in Mexico for tax compliance. The system handles Donors, Donations, CFDIs (tax receipts), Fiscal Calendar (Obligations), Transparency Reports, Dashboard, AML Alerts, Workflows, CSV/Excel export, Compliance Score, Audit Logs, Organization Logo, Multi-donataria capability, SAT catalog, Roles & Permissions.
 
 ## Tech Stack
-- **Frontend**: React + Tailwind CSS + Shadcn/UI + Recharts
-- **Backend**: FastAPI + Motor (MongoDB async driver)
-- **Database**: MongoDB
+- **Frontend**: React + Tailwind CSS + Shadcn/UI
+- **Backend**: FastAPI (Python) with modular routers
+- **Database**: MongoDB (Motor async driver)
+- **Emails**: Resend (optional)
 - **PDFs**: ReportLab
-- **Emails**: Resend (requires RESEND_API_KEY)
-- **Auth**: JWT cookies + Emergent Google OAuth
 
-## Core Features (All Implemented & Tested)
+## Architecture
+```
+/app/backend/
+├── server.py          (App init, router registration, scheduler)
+├── database.py        (MongoDB connection)
+├── models.py          (Pydantic schemas)
+├── utils.py           (Auth helpers, PDF helpers, email helpers, RBAC)
+├── services.py        (Shared business logic: alert rules, workflows)
+├── catalogo_donatarias.py (Seed data)
+└── routes/
+    ├── auth.py        (Auth + Org + Role management)
+    ├── donantes.py    (Donors CRUD)
+    ├── donativos.py   (Donations CRUD)
+    ├── cfdis.py       (CFDIs + PDF)
+    ├── fiscal.py      (Obligations + Transparency + Dashboard)
+    ├── alertas.py     (AML Alerts + Rules)
+    ├── workflows.py   (Workflow CRUD)
+    ├── reportes.py    (Reports + PDF)
+    ├── cumplimiento.py (Compliance metrics + PDF)
+    ├── exports.py     (CSV exports)
+    ├── config.py      (Notifications + Cron)
+    ├── catalogo.py    (SAT Catalog)
+    └── auditoria.py   (Audit logs)
+```
 
-### Catálogo de Donatarias SAT (NEW)
-- 134 donatarias autorizadas en México como seed data
-- 9 giros: asistencial, becas, cultural, derechos humanos, desarrollo social, ecológica, educativa, investigación, salud
-- 3 estatus: autorizada, revocada, en_proceso
-- 18 estados de México representados
-- Búsqueda por nombre, RFC, descripción
-- Filtros por giro, estatus SAT, estado
-- Detalle con datos completos y donantes vinculados
-- Vincular/desvincular donantes de la org con donatarias del catálogo
-- Importar/actualizar desde CSV
-- Auto-seed en primera consulta
-
-### Multi-Donataria (Multi-Tenant)
-- Users can belong to multiple organizations
-- Organization selector in sidebar
-- Create new organizations, data isolation
-
-### Authentication
-- Email/password + Google OAuth + JWT cookies
-
-### Dashboard
-- KPIs, charts, upcoming obligations, compliance widget
-
-### Donors, Donations, CFDIs
-- Full CRUD with CSV export, PDF generation with org logo
-- CFDI timbrado MOCKED (simulated UUID)
-
-### Fiscal Calendar, Transparency Reports
-- Obligations management, PDF generation
-
-### AML Alerts, Reports, Workflows
-- Configurable rules, PDF download, templates
-
-### Compliance Metrics
-- Score 0-100%, monthly chart, type breakdown, trend, PDF for auditors
-
-### Audit Log
-- Auto-tracking all CRUD actions, filterable page, CSV export
-
-### Organization Logo & Config
-- Logo upload (shown in all PDFs), cron scheduler, email settings
-
-## Key API Endpoints
-- Auth: /api/auth/register, /login, /me
-- Orgs: /api/organizaciones, /api/organizaciones/switch/{id}
-- Org: /api/organizacion, /api/organizacion/logo
-- Donantes: /api/donantes (CRUD), /api/donantes/{id}/catalogo
-- Donativos: /api/donativos (CRUD)
-- CFDIs: /api/cfdis (CRUD), /api/cfdis/{id}/pdf
-- Obligaciones: /api/obligaciones
-- Transparencia: /api/transparencia, /api/transparencia/{id}/pdf
-- Alertas: /api/alertas, /api/alertas/reglas
-- Reportes: /api/reportes, /api/reportes/{id}/pdf, /api/reportes/plantillas
-- Workflows: /api/workflows
-- Cumplimiento: /api/cumplimiento, /api/cumplimiento/pdf
-- Auditoria: /api/auditoria, /api/auditoria/export
-- Catálogo: /api/catalogo/donatarias, /api/catalogo/donatarias/{id}, /api/catalogo/donatarias/{id}/vincular, /api/catalogo/donatarias/import
-- Export: /api/exportar/donantes, /donativos, /alertas
-- Cron: /api/cron/notificaciones-diarias, /api/cron/status
-- Dashboard: /api/dashboard/stats
-
-## Test Credentials
-- Email: test@donataria.org / Password: Test1234!
-
-## Testing History
-- 7 iterations, 100% pass rate on all (backend + frontend)
+## Implemented Features (Completed)
+1. JWT Authentication + Google OAuth (Emergent)
+2. Multi-donataria (one user, multiple organizations)
+3. Donors CRUD with RFC validation
+4. Donations CRUD with donante stats update
+5. CFDIs CRUD with folio generation, timbrado (MOCKED), cancel, PDF
+6. Fiscal Obligations calendar with urgency indicators
+7. Transparency Reports (Informe Ficha 19/ISR) with PDF
+8. Dashboard with stats, charts, obligations
+9. AML Alert Rules + Alerts engine
+10. Workflows automation engine
+11. CSV/Excel exports (donantes, donativos, alertas)
+12. Compliance Score Dashboard with PDF report
+13. Audit Log system
+14. Organization Logo Upload (base64)
+15. SAT Catalog of Authorized Donatarias (134 entries)
+16. Email Notifications + Daily Cron scheduler
+17. Backend modular refactoring (server.py -> routes/)
+18. **Roles & Permissions (RBAC)** - admin/editor/viewer per org
+    - Role management UI in Configuracion
+    - Member invite/update/remove
+    - Role badge in sidebar
+    - Endpoint-level access control
 
 ## MOCKED Integrations
-- CFDI PAC Timbrado (simulated UUID)
-- Email Notifications (requires RESEND_API_KEY)
+- CFDI timbrado (PAC) - generates simulated UUID instead of real fiscal stamp
+- Email notifications - RESEND_API_KEY not configured in environment
 
-## Pending / Future Tasks
-- [ ] Real PAC integration for CFDI timbrado
-- [ ] Webhook endpoints for PAC status updates
-- [ ] Refactor server.py into route modules (3500+ lines)
-- [ ] User roles and permissions per organization
-- [ ] Advanced analytics dashboard
+## Pending Tasks (Prioritized)
+### P2 - Real PAC Integration
+- Replace CFDI simulation with real PAC provider (Finkok, SW SmarterWeb)
+- Requires integration_playbook_expert_v2
+- Requires PAC credentials from user
+
+### P2 - Webhook for PAC status updates
+- Receive async status updates from PAC
+
+## DB Schema
+- `users`: `{user_id, email, name, password_hash, organizacion_id, organizaciones_ids[], roles[{organizacion_id, role}]}`
+- `organizaciones`: `{organizacion_id, nombre, rfc, rubro, logo_url, ...}`
+- `donantes`: `{donante_id, organizacion_id, nombre, rfc, tipo_persona, ...}`
+- `donativos`: `{donativo_id, organizacion_id, donante_id, monto, moneda, ...}`
+- `cfdis`: `{cfdi_id, organizacion_id, folio, uuid_fiscal, estado, ...}`
+- `obligaciones`: `{obligacion_id, organizacion_id, nombre, fecha_limite, estado, ...}`
+- `informes_transparencia`: `{informe_id, organizacion_id, ejercicio_fiscal, ...}`
+- `alert_rules`: `{rule_id, organizacion_id, tipo_regla, condiciones, ...}`
+- `alerts`: `{alert_id, organizacion_id, tipo, severidad, titulo, ...}`
+- `workflows`: `{workflow_id, organizacion_id, trigger, condiciones, acciones, ...}`
+- `reports`: `{report_id, organizacion_id, titulo, tipo, datos, ...}`
+- `audit_log`: `{audit_id, organizacion_id, user_id, accion, entidad, ...}`
+- `catalogo_donatarias`: `{catalogo_id, nombre, rfc, giro, estatus_sat, ...}`
