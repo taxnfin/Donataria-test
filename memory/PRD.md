@@ -1,36 +1,23 @@
 # DonatariaSAT - Product Requirements Document
 
 ## Problem Statement
-SaaS platform for "DonatariaSAT" - management system for authorized charities in Mexico for tax compliance.
+SaaS for "DonatariaSAT" - management system for authorized charities in Mexico for tax compliance.
 
 ## Tech Stack
-- **Frontend**: React + Tailwind CSS + Shadcn/UI + Recharts
-- **Backend**: FastAPI (Python) with modular routers
-- **Database**: MongoDB (Motor async driver)
-- **Emails**: Resend (optional) | **PDFs**: ReportLab
+React + Tailwind + Shadcn/UI + Recharts | FastAPI + MongoDB (Motor) | ReportLab (PDFs) | Resend (Emails)
 
 ## Architecture
 ```
 /app/backend/routes/
-├── auth.py          (Auth + Org + Roles)
-├── donantes.py      (Donors CRUD)
-├── donativos.py     (Donations CRUD)
-├── cfdis.py         (CFDIs + PDF)
-├── fiscal.py        (Obligations + Transparency + Dashboard)
-├── alertas.py       (AML Alerts + Rules)
-├── workflows.py     (Workflow CRUD)
-├── reportes.py      (Reports + PDF)
-├── cumplimiento.py  (Compliance metrics + PDF)
-├── exports.py       (CSV exports)
-├── config.py        (Notifications + Cron)
-├── catalogo.py      (SAT Catalog)
-├── auditoria.py     (Audit logs)
-├── declaracion.py   (Declaracion Anual Titulo III LISR)
-├── pld.py           (PLD/AML full module)
-└── dashboard_adv.py (Semaforo + Reportes Operativos + Ficha Publica)
+├── auth.py, donantes.py, donativos.py, cfdis.py, fiscal.py
+├── alertas.py, workflows.py, reportes.py, cumplimiento.py
+├── exports.py, config.py, catalogo.py, auditoria.py
+├── declaracion.py (Declaracion Anual Titulo III LISR)
+├── pld.py (PLD/AML + avisos UIF export)
+└── dashboard_adv.py (Semaforo + Reportes Operativos + Ficha PDF + Analytics)
 ```
 
-## Implemented Features
+## Implemented Features (22 total)
 1. JWT Auth + Google OAuth
 2. Multi-donataria (one user, multiple orgs)
 3. Donors CRUD + RFC validation
@@ -51,13 +38,12 @@ SaaS platform for "DonatariaSAT" - management system for authorized charities in
 18. Roles & Permissions (RBAC) - admin/editor/viewer
 19. Declaracion Anual Titulo III LISR (auto-fill, 10% control, remanente ficto, PDF)
 20. PLD/AML Module (ops vulnerables, avisos UIF, matriz riesgo, KYC, due diligence)
-21. **Semaforo de Cumplimiento** - Dashboard widget combining 4 weighted indicators
-22. **Reportes Operativos** - Donativos por tipo, top donantes, 80/20 concentracion, especie, extranjero, conciliacion CFDI, ficha publica transparencia
+21. Semaforo + Reportes Operativos (top donantes, 80/20, especie, extranjero, conciliacion, ficha publica)
+22. **PDF Ficha Publica + Exportacion masiva avisos UIF (CSV+TXT) + Analytics avanzados (12 meses tendencias, YoY)**
 
 ## MOCKED
-- CFDI timbrado (PAC) - simulated UUID
-- Email notifications - RESEND_API_KEY not configured
+- CFDI timbrado (PAC) | Email notifications (sin RESEND_API_KEY)
 
-## Pending Tasks
-### P2 - Real PAC Integration
-### P2 - Webhook for PAC status updates
+## Pending
+- P2: Real PAC Integration for CFDI stamping
+- P2: Webhook for PAC status updates
