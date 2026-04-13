@@ -1,7 +1,7 @@
 # DonatariaSAT - Product Requirements Document
 
 ## Problem Statement
-Build a SaaS platform MVP for "DonatariaSAT" - a management system for authorized charities (donatarias autorizadas) in Mexico for tax compliance. The system handles Donors, Donations, CFDIs (tax receipts), Fiscal Calendar (Obligations), Transparency Reports, Dashboard, AML Alerts, Workflows, CSV/Excel export, Compliance Score, Audit Logs, Organization Logo, Multi-donataria capability, SAT catalog, Roles & Permissions.
+SaaS platform for "DonatariaSAT" - management system for authorized charities (donatarias autorizadas) in Mexico for tax compliance. Handles Donors, Donations, CFDIs, Fiscal Calendar, Transparency Reports, Dashboard, AML Alerts, Workflows, CSV/Excel export, Compliance Score, Audit Logs, Organization Logo, Multi-donataria, SAT catalog, Roles & Permissions, Declaracion Anual Titulo III LISR, PLD/AML compliance.
 
 ## Tech Stack
 - **Frontend**: React + Tailwind CSS + Shadcn/UI
@@ -16,8 +16,8 @@ Build a SaaS platform MVP for "DonatariaSAT" - a management system for authorize
 ├── server.py          (App init, router registration, scheduler)
 ├── database.py        (MongoDB connection)
 ├── models.py          (Pydantic schemas)
-├── utils.py           (Auth helpers, PDF helpers, email helpers, RBAC)
-├── services.py        (Shared business logic: alert rules, workflows)
+├── utils.py           (Auth, PDF, email, RBAC helpers)
+├── services.py        (Shared business logic)
 ├── catalogo_donatarias.py (Seed data)
 └── routes/
     ├── auth.py        (Auth + Org + Role management)
@@ -32,57 +32,53 @@ Build a SaaS platform MVP for "DonatariaSAT" - a management system for authorize
     ├── exports.py     (CSV exports)
     ├── config.py      (Notifications + Cron)
     ├── catalogo.py    (SAT Catalog)
-    └── auditoria.py   (Audit logs)
+    ├── auditoria.py   (Audit logs)
+    ├── declaracion.py (Declaracion Anual Titulo III LISR)
+    └── pld.py         (PLD/AML full module)
 ```
 
-## Implemented Features (Completed)
-1. JWT Authentication + Google OAuth (Emergent)
-2. Multi-donataria (one user, multiple organizations)
-3. Donors CRUD with RFC validation
-4. Donations CRUD with donante stats update
-5. CFDIs CRUD with folio generation, timbrado (MOCKED), cancel, PDF
-6. Fiscal Obligations calendar with urgency indicators
-7. Transparency Reports (Informe Ficha 19/ISR) with PDF
-8. Dashboard with stats, charts, obligations
-9. AML Alert Rules + Alerts engine
-10. Workflows automation engine
-11. CSV/Excel exports (donantes, donativos, alertas)
-12. Compliance Score Dashboard with PDF report
-13. Audit Log system
-14. Organization Logo Upload (base64)
-15. SAT Catalog of Authorized Donatarias (134 entries)
-16. Email Notifications + Daily Cron scheduler
-17. Backend modular refactoring (server.py -> routes/)
-18. **Roles & Permissions (RBAC)** - admin/editor/viewer per org
-    - Role management UI in Configuracion
-    - Member invite/update/remove
-    - Role badge in sidebar
-    - Endpoint-level access control
+## Implemented Features
+1. JWT Auth + Google OAuth
+2. Multi-donataria (one user, multiple orgs)
+3. Donors CRUD + RFC validation
+4. Donations CRUD + donante stats
+5. CFDIs CRUD + folio + timbrado (MOCKED) + cancel + PDF
+6. Fiscal Obligations + urgency indicators
+7. Transparency Reports (Ficha 19/ISR) + PDF
+8. Dashboard + stats + charts
+9. AML Alert Rules + engine
+10. Workflows automation
+11. CSV/Excel exports
+12. Compliance Score + PDF
+13. Audit Log
+14. Organization Logo Upload
+15. SAT Catalog (134 entries)
+16. Email Notifications + Daily Cron
+17. Backend modular refactoring
+18. Roles & Permissions (RBAC) - admin/editor/viewer
+19. **Declaracion Anual Titulo III LISR** (NEW)
+    - CRUD + auto-fill from existing data
+    - Control 10% actividades no relacionadas (auto-calculated, validated on present)
+    - Remanente distribuible ficto (4 components)
+    - PDF export with all sections
+20. **PLD/AML Compliance Module** (NEW)
+    - Operaciones vulnerables (Art. 17 Ley Antilavado, >= 1,605 UMAs / $181,589.70)
+    - Avisos UIF/SAT with folios and acuses
+    - Matriz de riesgo automatica (PEP +40, jurisdiccion +30, monto +20, efectivo +15, extranjero +10, KYC incompleto +15)
+    - KYC de donantes (identificacion, beneficiario controlador, constancia fiscal)
+    - Dashboard AML (alertas generadas vs resueltas, tasa resolucion)
+    - Bitacora Due Diligence (revisiones con hallazgos y resultados)
 
-## MOCKED Integrations
-- CFDI timbrado (PAC) - generates simulated UUID instead of real fiscal stamp
-- Email notifications - RESEND_API_KEY not configured in environment
+## MOCKED
+- CFDI timbrado (PAC) - simulated UUID
+- Email notifications - RESEND_API_KEY not configured
 
-## Pending Tasks (Prioritized)
+## Pending Tasks
 ### P2 - Real PAC Integration
-- Replace CFDI simulation with real PAC provider (Finkok, SW SmarterWeb)
-- Requires integration_playbook_expert_v2
-- Requires PAC credentials from user
+- Replace CFDI simulation with real PAC provider
+- Requires integration_playbook_expert_v2 + PAC credentials
 
 ### P2 - Webhook for PAC status updates
-- Receive async status updates from PAC
 
-## DB Schema
-- `users`: `{user_id, email, name, password_hash, organizacion_id, organizaciones_ids[], roles[{organizacion_id, role}]}`
-- `organizaciones`: `{organizacion_id, nombre, rfc, rubro, logo_url, ...}`
-- `donantes`: `{donante_id, organizacion_id, nombre, rfc, tipo_persona, ...}`
-- `donativos`: `{donativo_id, organizacion_id, donante_id, monto, moneda, ...}`
-- `cfdis`: `{cfdi_id, organizacion_id, folio, uuid_fiscal, estado, ...}`
-- `obligaciones`: `{obligacion_id, organizacion_id, nombre, fecha_limite, estado, ...}`
-- `informes_transparencia`: `{informe_id, organizacion_id, ejercicio_fiscal, ...}`
-- `alert_rules`: `{rule_id, organizacion_id, tipo_regla, condiciones, ...}`
-- `alerts`: `{alert_id, organizacion_id, tipo, severidad, titulo, ...}`
-- `workflows`: `{workflow_id, organizacion_id, trigger, condiciones, acciones, ...}`
-- `reports`: `{report_id, organizacion_id, titulo, tipo, datos, ...}`
-- `audit_log`: `{audit_id, organizacion_id, user_id, accion, entidad, ...}`
-- `catalogo_donatarias`: `{catalogo_id, nombre, rfc, giro, estatus_sat, ...}`
+## DB Collections
+users, organizaciones, donantes, donativos, cfdis, obligaciones, informes_transparencia, alert_rules, alerts, workflows, reports, report_templates, audit_log, catalogo_donatarias, donante_catalogo_links, user_sessions, declaraciones_anuales, avisos_uif, due_diligence
