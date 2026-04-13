@@ -1,7 +1,10 @@
 from fastapi import APIRouter, HTTPException, Depends
+from fastapi.responses import StreamingResponse
 from datetime import datetime, timezone
 from typing import Optional
 import uuid
+import io
+import csv
 from database import db
 from models import User, DonanteKYCUpdate, AvisoUIFCreate, DueDiligenceCreate
 from utils import get_current_user, log_audit, require_role
@@ -382,3 +385,116 @@ async def update_due_diligence(dd_id: str, data: DueDiligenceCreate, user: User 
         raise HTTPException(status_code=404, detail="Registro no encontrado")
     updated = await db.due_diligence.find_one({"dd_id": dd_id}, {"_id": 0})
     return updated
+
+
+
+# ==================== EXPORTACION MASIVA AVISOS UIF ====================
+
+@router.get("/pld/avisos/export/csv")
+async def export_avisos_csv(user: User = Depends(get_current_user)):
+    """Export all UIF notices to official CSV format"""
+    if not user.organizacion_id:
+        raise HTTPException(status_code=400, detail="No tiene organizacion asignada")
+
+    org = await db.organizaciones.find_one({"organizacion_id": user.organizacion_id}, {"_id": 0}) or {}
+    avisos = await db.avisos_uif.find(
+        {"organizacion_id": user.organizacion_id}, {"_id": 0}
+    ).sort("created_at", 1).to_list(10000)
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    # Header - Official format
+    writer.writerow([
+        "No.", "Tipo de Aviso", "Numero de Folio", "Fecha de Presentacion",
+        "Acuse de Recepcion", "Monto (MXN)", "Descripcion", "Estatus",
+        "Donante ID", "Donativo ID", "RFC Organizacion", "Nombre Organizacion",
+        "Fecha de Registro", "Ultima Actualizacion"
+    ])
+
+    for i, a in enumerate(avisos, 1):
+        tipo_map = {
+            "operacion_vulnerable": "Operacion Vulnerable (Art. 17 LFPIORPI)",
+            "operacion_inusual": "Operacion Inusual",
+            "operacion_relevante": "Operacion Relevante",
+        }
+        writer.writerow([
+            i,
+            tipo_map.get(a.get("tipo_aviso", ""), a.get("tipo_aviso", "")),
+            a.get("numero_folio", ""),
+            a.get("fecha_presentacion", ""),
+            a.get("acuse_recepcion", ""),
+            a.get("monto", 0),
+            a.get("descripcion", ""),
+            a.get("estatus", "").upper(),
+            a.get("donante_id", ""),
+            a.get("donativo_id", ""),
+            org.get("rfc", ""),
+            org.get("nombre", ""),
+            (a.get("created_at", ""))[:19],
+            (a.get("updated_at", ""))[:19],
+        ])
+
+    content = output.getvalue()
+    return StreamingResponse(
+        io.BytesIO(content.encode("utf-8-sig")),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=avisos_uif_{org.get('rfc', 'ORG')}_{datetime.now().strftime('%Y%m%d')}.csv"}
+    )
+
+
+@router.get("/pld/avisos/export/reporte")
+async def export_avisos_reporte(user: User = Depends(get_current_user)):
+    """Export UIF notices as a formal report text"""
+    if not user.organizacion_id:
+        raise HTTPException(status_code=400, detail="No tiene organizacion asignada")
+
+    org = await db.organizaciones.find_one({"organizacion_id": user.organizacion_id}, {"_id": 0}) or {}
+    avisos = await db.avisos_uif.find(
+        {"organizacion_id": user.organizacion_id}, {"_id": 0}
+    ).sort("created_at", 1).to_list(10000)
+
+    total = len(avisos)
+    pendientes = sum(1 for a in avisos if a.get("estatus") == "pendiente")
+    presentados = sum(1 for a in avisos if a.get("estatus") == "presentado")
+    acusados = sum(1 for a in avisos if a.get("estatus") == "acusado")
+    monto_total = sum(a.get("monto", 0) for a in avisos)
+
+    output = io.StringIO()
+    output.write("=" * 70 + "\n")
+    output.write("REPORTE DE AVISOS PRESENTADOS ANTE LA UIF / SAT\n")
+    output.write(f"Organizacion: {org.get('nombre', 'N/A')}\n")
+    output.write(f"RFC: {org.get('rfc', 'N/A')}\n")
+    output.write(f"Fecha de generacion: {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M UTC')}\n")
+    output.write("=" * 70 + "\n\n")
+
+    output.write("RESUMEN\n")
+    output.write("-" * 40 + "\n")
+    output.write(f"Total de avisos: {total}\n")
+    output.write(f"Pendientes: {pendientes}\n")
+    output.write(f"Presentados: {presentados}\n")
+    output.write(f"Con acuse: {acusados}\n")
+    output.write(f"Monto total: ${monto_total:,.2f} MXN\n\n")
+
+    output.write("DETALLE DE AVISOS\n")
+    output.write("-" * 70 + "\n")
+    for i, a in enumerate(avisos, 1):
+        output.write(f"\n[{i}] {a.get('tipo_aviso', '').replace('_', ' ').upper()}\n")
+        output.write(f"    Folio: {a.get('numero_folio', 'Sin folio')}\n")
+        output.write(f"    Fecha presentacion: {a.get('fecha_presentacion', 'N/A')}\n")
+        output.write(f"    Acuse: {a.get('acuse_recepcion', 'N/A')}\n")
+        output.write(f"    Monto: ${a.get('monto', 0):,.2f} MXN\n")
+        output.write(f"    Estatus: {a.get('estatus', '').upper()}\n")
+        if a.get("descripcion"):
+            output.write(f"    Descripcion: {a.get('descripcion')}\n")
+
+    output.write("\n" + "=" * 70 + "\n")
+    output.write("Fundamento legal: Art. 17 y 18 LFPIORPI\n")
+    output.write("Este reporte es de uso interno y cumplimiento regulatorio.\n")
+
+    content = output.getvalue()
+    return StreamingResponse(
+        io.BytesIO(content.encode("utf-8")),
+        media_type="text/plain",
+        headers={"Content-Disposition": f"attachment; filename=reporte_avisos_uif_{org.get('rfc', 'ORG')}_{datetime.now().strftime('%Y%m%d')}.txt"}
+    )

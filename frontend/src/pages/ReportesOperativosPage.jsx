@@ -9,7 +9,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "../components/ui/table";
 import {
-  BarChart as BarChartIcon, Users, DollarSign, Globe, Package, FileText, AlertTriangle, CheckCircle2, XCircle, Building, ArrowRight
+  BarChart as BarChartIcon, Users, DollarSign, Globe, Package, FileText, AlertTriangle, CheckCircle2, XCircle, Building, ArrowRight, Download
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import axios from "axios";
@@ -244,8 +244,15 @@ const ReportesOperativosPage = () => {
           {/* Ficha Publica */}
           <TabsContent value="ficha">
             {ficha && (
-              <Card className="bg-white"><CardHeader><CardTitle className="text-base flex items-center gap-2"><Building className="w-4 h-4 text-emerald-600" /> Ficha Publica de Transparencia</CardTitle>
-                <CardDescription>Informacion que debe estar disponible en el portal de la donataria</CardDescription></CardHeader>
+              <Card className="bg-white"><CardHeader className="flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-base flex items-center gap-2"><Building className="w-4 h-4 text-emerald-600" /> Ficha Publica de Transparencia</CardTitle>
+                  <CardDescription>Informacion que debe estar disponible en el portal de la donataria</CardDescription>
+                </div>
+                <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => window.open(`${BACKEND_URL}/api/dashboard/ficha-publica/pdf`, "_blank")} data-testid="ficha-pdf-btn">
+                  <Download className="w-4 h-4 mr-1" /> Descargar PDF
+                </Button>
+              </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="p-4 bg-gray-50 rounded-lg space-y-2">
                     <p className="font-semibold text-gray-900">{ficha.organizacion?.nombre}</p>

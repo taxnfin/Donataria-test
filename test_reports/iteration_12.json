@@ -1,0 +1,157 @@
+{
+  "summary": "Iteration 12 testing completed for 3 new features: 1) Ficha Publica PDF export, 2) Avisos UIF CSV/Report export, 3) Advanced dashboard analytics with 12-month trends and YoY comparison. Backend: 32/32 tests passed (100%). Frontend: All UI features working correctly.",
+  
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Dashboard and Reportes Operativos charts",
+        "issues": ["Console warning about chart width/height being -1 - minor rendering issue on initial load, does not affect functionality (known issue from iteration 10/11)"]
+      }
+    ]
+  },
+  
+  "passed_tests": [
+    "GET /api/dashboard/ficha-publica/pdf - returns 200",
+    "GET /api/dashboard/ficha-publica/pdf - returns application/pdf content type",
+    "GET /api/dashboard/ficha-publica/pdf - has Content-Disposition header with .pdf filename",
+    "GET /api/dashboard/ficha-publica/pdf - returns valid PDF (>1000 bytes, starts with %PDF)",
+    "GET /api/dashboard/ficha-publica/pdf - unauthenticated returns 401",
+    "GET /api/pld/avisos/export/csv - returns 200",
+    "GET /api/pld/avisos/export/csv - returns text/csv content type",
+    "GET /api/pld/avisos/export/csv - has Content-Disposition header with .csv filename",
+    "GET /api/pld/avisos/export/csv - has UTF-8 BOM for Excel compatibility",
+    "GET /api/pld/avisos/export/csv - has proper header row (No., Tipo de Aviso, Numero de Folio, Monto)",
+    "GET /api/pld/avisos/export/csv - unauthenticated returns 401",
+    "GET /api/pld/avisos/export/reporte - returns 200",
+    "GET /api/pld/avisos/export/reporte - returns text/plain content type",
+    "GET /api/pld/avisos/export/reporte - has Content-Disposition header with .txt filename",
+    "GET /api/pld/avisos/export/reporte - has proper report header (REPORTE DE AVISOS, Organizacion, RFC)",
+    "GET /api/pld/avisos/export/reporte - has RESUMEN section with total count",
+    "GET /api/pld/avisos/export/reporte - unauthenticated returns 401",
+    "GET /api/dashboard/analytics - returns 200",
+    "GET /api/dashboard/analytics - has tendencias object",
+    "GET /api/dashboard/analytics - tendencias has 4 arrays (donativos_mensual, donantes_crecimiento, cfdis_mensual, alertas_mensual)",
+    "GET /api/dashboard/analytics - tendencias.donativos_mensual has 12 entries",
+    "GET /api/dashboard/analytics - tendencias.donantes_crecimiento has 12 entries",
+    "GET /api/dashboard/analytics - tendencias.cfdis_mensual has 12 entries",
+    "GET /api/dashboard/analytics - tendencias.alertas_mensual has 12 entries",
+    "GET /api/dashboard/analytics - has comparativa_anual",
+    "GET /api/dashboard/analytics - comparativa_anual has variacion_pct field",
+    "GET /api/dashboard/analytics - comparativa_anual has YoY fields (donativos_actual, donativos_anterior, donantes_nuevos_actual, donantes_nuevos_anterior)",
+    "GET /api/dashboard/analytics - has metricas",
+    "GET /api/dashboard/analytics - metricas has promedio_donativo field",
+    "GET /api/dashboard/analytics - metricas has total counts (total_donantes, total_donativos, total_cfdis, total_alertas)",
+    "GET /api/dashboard/analytics - donativos_mensual entries have correct structure (label, mes, year, monto, cantidad)",
+    "GET /api/dashboard/analytics - unauthenticated returns 401",
+    "Frontend: Dashboard shows YoY comparison cards (Donativos 2026, Promedio por Donativo, Donantes Nuevos)",
+    "Frontend: Dashboard shows Tendencia de Donativos (12 meses) AreaChart",
+    "Frontend: Dashboard shows Alertas AML Generadas vs Resueltas BarChart",
+    "Frontend: PLD page Avisos UIF tab shows CSV export button",
+    "Frontend: PLD page Avisos UIF tab shows Reporte export button",
+    "Frontend: Reportes Operativos Ficha Publica tab shows Descargar PDF button"
+  ],
+  
+  "test_report_links": [
+    "/app/backend/tests/test_iteration12_exports_analytics.py",
+    "/app/test_reports/pytest/pytest_iteration12.xml"
+  ],
+  
+  "action_items": [],
+  
+  "critical_code_review_comments": [
+    "PDF export uses ReportLab correctly with proper styling and table formatting",
+    "CSV export uses utf-8-sig encoding for Excel compatibility (UTF-8 BOM)",
+    "Text report export has proper formatting with sections and legal footer",
+    "Analytics endpoint correctly calculates 12-month trends using timedelta(days=months_ago * 30)",
+    "YoY comparison correctly calculates variacion_pct with division by zero protection",
+    "All new endpoints properly require authentication (return 401 for unauthenticated requests)",
+    "Frontend correctly displays analytics data with Recharts AreaChart and BarChart components"
+  ],
+  
+  "updated_files": [
+    "/app/backend/tests/test_iteration12_exports_analytics.py"
+  ],
+  
+  "success_rate": {
+    "backend": "100% (32/32 tests passed)",
+    "frontend": "100% (all UI features working)"
+  },
+  
+  "test_credentials": {
+    "admin": {
+      "email": "test@donataria.org",
+      "password": "Test1234!"
+    }
+  },
+  
+  "seed_data_creation": "No new seed data created - used existing test data (2 avisos UIF, 3 donativos, 11 donantes)",
+  
+  "retest_needed": false,
+  
+  "should_main_agent_self_test": false,
+  
+  "context_for_next_testing_agent": "Iteration 12 tested 3 new features: 1) Ficha Publica PDF export at GET /api/dashboard/ficha-publica/pdf - generates PDF with org info, financials, activities using ReportLab. 2) Avisos UIF mass export at GET /api/pld/avisos/export/csv (UTF-8 BOM for Excel) and GET /api/pld/avisos/export/reporte (text report). 3) Advanced analytics at GET /api/dashboard/analytics with tendencias (4 arrays of 12 months each: donativos_mensual, donantes_crecimiento, cfdis_mensual, alertas_mensual), comparativa_anual (YoY with variacion_pct), and metricas (promedio_donativo). Dashboard shows trend charts using Recharts. CFDI timbrado remains MOCKED.",
+  
+  "mocked_apis": {
+    "CFDI_PAC_Integration": "CFDI timbrado (stamping) is MOCKED - returns simulated UUID",
+    "Email_Notifications": "Email notifications MOCKED - RESEND_API_KEY not configured"
+  },
+  
+  "new_features_summary": {
+    "ficha_publica_pdf": {
+      "endpoint": "GET /api/dashboard/ficha-publica/pdf",
+      "description": "Generates PDF of public transparency card for publishing on org's website",
+      "content_type": "application/pdf",
+      "includes": ["Org info (nombre, RFC, rubro)", "Estado de Ingresos y Egresos", "Actividades y Beneficiarios", "Fundamento Legal"],
+      "frontend_button": "Reportes Operativos > Ficha Publica tab > 'Descargar PDF' button"
+    },
+    "avisos_csv_export": {
+      "endpoint": "GET /api/pld/avisos/export/csv",
+      "description": "Export all UIF notices to official CSV format with UTF-8 BOM for Excel",
+      "content_type": "text/csv",
+      "columns": ["No.", "Tipo de Aviso", "Numero de Folio", "Fecha de Presentacion", "Acuse de Recepcion", "Monto (MXN)", "Descripcion", "Estatus", "Donante ID", "Donativo ID", "RFC Organizacion", "Nombre Organizacion", "Fecha de Registro", "Ultima Actualizacion"],
+      "frontend_button": "PLD / AML > Avisos UIF tab > 'CSV' button"
+    },
+    "avisos_reporte_export": {
+      "endpoint": "GET /api/pld/avisos/export/reporte",
+      "description": "Export UIF notices as a formal text report",
+      "content_type": "text/plain",
+      "sections": ["Header with org info", "RESUMEN (totals)", "DETALLE DE AVISOS", "Fundamento legal footer"],
+      "frontend_button": "PLD / AML > Avisos UIF tab > 'Reporte' button"
+    },
+    "advanced_analytics": {
+      "endpoint": "GET /api/dashboard/analytics",
+      "description": "Advanced analytics with 12-month trends and YoY comparison",
+      "response_structure": {
+        "tendencias": {
+          "donativos_mensual": "12 entries with label, mes, year, monto, cantidad",
+          "donantes_crecimiento": "12 entries with label, nuevos",
+          "cfdis_mensual": "12 entries with label, emitidos, timbrados, cancelados",
+          "alertas_mensual": "12 entries with label, generadas, resueltas"
+        },
+        "comparativa_anual": {
+          "fields": ["donativos_actual", "donativos_anterior", "variacion_pct", "donantes_nuevos_actual", "donantes_nuevos_anterior", "cfdis_actual"]
+        },
+        "metricas": {
+          "fields": ["promedio_donativo", "total_donantes", "total_donativos", "total_cfdis", "total_alertas"]
+        }
+      },
+      "frontend_display": "Dashboard shows 3 YoY cards + 2 trend charts (AreaChart for donativos, BarChart for alertas)"
+    }
+  },
+  
+  "current_test_data": {
+    "donativos_2026": "$180,000",
+    "promedio_donativo": "$60,000",
+    "donantes_nuevos_este_ano": 11,
+    "avisos_uif": 2,
+    "total_donantes": 11
+  }
+}

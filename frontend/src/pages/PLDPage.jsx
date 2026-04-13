@@ -20,13 +20,14 @@ import {
 } from "../components/ui/table";
 import { Checkbox } from "../components/ui/checkbox";
 import {
-  Shield, AlertTriangle, FileText, Users, Search, Plus, Eye, CheckCircle2, Clock, XCircle, DollarSign, Fingerprint, ClipboardList
+  Shield, AlertTriangle, FileText, Users, Search, Plus, Eye, CheckCircle2, Clock, XCircle, DollarSign, Fingerprint, ClipboardList, Download
 } from "lucide-react";
 import axios from "axios";
 import { API } from "../App";
 import { toast } from "sonner";
 
 const fmt = (v) => `$${(v || 0).toLocaleString("es-MX", { minimumFractionDigits: 2 })}`;
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 const PLDPage = () => {
   const [dashboard, setDashboard] = useState(null);
@@ -243,9 +244,13 @@ const PLDPage = () => {
                   <CardTitle className="text-base flex items-center gap-2"><FileText className="w-4 h-4 text-blue-600" /> Avisos presentados ante UIF / SAT</CardTitle>
                   <CardDescription>Registro de avisos con folios y acuses de recepcion</CardDescription>
                 </div>
-                <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => { setAvisoForm({ tipo_aviso: "operacion_vulnerable", estatus: "pendiente" }); setAvisoDialog(true); }} data-testid="new-aviso-btn">
-                  <Plus className="w-4 h-4 mr-1" /> Nuevo Aviso
-                </Button>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => window.open(`${BACKEND_URL}/api/pld/avisos/export/csv`, "_blank")} data-testid="export-avisos-csv"><Download className="w-4 h-4 mr-1" /> CSV</Button>
+                  <Button size="sm" variant="outline" onClick={() => window.open(`${BACKEND_URL}/api/pld/avisos/export/reporte`, "_blank")} data-testid="export-avisos-reporte"><FileText className="w-4 h-4 mr-1" /> Reporte</Button>
+                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => { setAvisoForm({ tipo_aviso: "operacion_vulnerable", estatus: "pendiente" }); setAvisoDialog(true); }} data-testid="new-aviso-btn">
+                    <Plus className="w-4 h-4 mr-1" /> Nuevo Aviso
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {avisos.length === 0 ? <p className="text-sm text-gray-500 text-center py-8">No hay avisos registrados</p> : (
