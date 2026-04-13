@@ -46,9 +46,18 @@ const DeclaracionAnualPage = () => {
   const handleAutoFill = async () => {
     try {
       const res = await axios.get(`${API}/declaraciones/auto-fill/${year}`, { withCredentials: true });
-      setForm(prev => ({ ...prev, ...res.data }));
-      toast.success("Datos auto-llenados desde donativos registrados");
-    } catch { toast.error("Error al auto-llenar"); }
+      const data = res.data;
+      setForm(prev => ({
+        ...prev,
+        ingresos_donativos_efectivo: data.ingresos_donativos_efectivo || "",
+        ingresos_donativos_especie: data.ingresos_donativos_especie || "",
+        deducciones_administracion: data.deducciones_administracion || "",
+      }));
+      toast.success(`Datos auto-llenados: $${(data.ingresos_donativos_efectivo || 0).toLocaleString()} en donativos`);
+    } catch (e) {
+      const msg = e.response?.data?.detail || e.message || "Error desconocido";
+      toast.error(`Error al auto-llenar: ${msg}`);
+    }
   };
 
   const openCreate = () => {
@@ -67,11 +76,24 @@ const DeclaracionAnualPage = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
+      // Convert empty strings to 0 for all numeric fields
+      const payload = { ...form, ejercicio_fiscal: editing ? form.ejercicio_fiscal : year };
+      const numericFields = [
+        "ingresos_donativos_efectivo", "ingresos_donativos_especie", "ingresos_cuotas_asociados",
+        "ingresos_actividades_propias", "ingresos_actividades_no_relacionadas", "ingresos_intereses",
+        "ingresos_otros", "deducciones_operacion", "deducciones_administracion", "deducciones_financieros",
+        "deducciones_otros", "ficto_omision_ingresos", "ficto_compras_no_realizadas",
+        "ficto_prestamos_socios", "ficto_gastos_no_deducibles",
+      ];
+      for (const field of numericFields) {
+        payload[field] = parseFloat(payload[field]) || 0;
+      }
+
       if (editing) {
-        await axios.put(`${API}/declaraciones/${editing.declaracion_id}`, form, { withCredentials: true });
+        await axios.put(`${API}/declaraciones/${editing.declaracion_id}`, payload, { withCredentials: true });
         toast.success("Declaracion actualizada");
       } else {
-        await axios.post(`${API}/declaraciones`, { ...form, ejercicio_fiscal: year }, { withCredentials: true });
+        await axios.post(`${API}/declaraciones`, payload, { withCredentials: true });
         toast.success("Declaracion creada");
       }
       setDialogOpen(false);
@@ -101,8 +123,15 @@ const DeclaracionAnualPage = () => {
     window.open(`${BACKEND_URL}/api/declaraciones/${dec.declaracion_id}/pdf`, "_blank");
   };
 
-  const f = (field) => form[field] || 0;
-  const setF = (field, val) => setForm(prev => ({ ...prev, [field]: parseFloat(val) || 0 }));
+  const f = (field) => {
+    const val = form[field];
+    if (val === undefined || val === null || val === "") return "";
+    return val;
+  };
+  const setF = (field, val) => {
+    const str = String(val).trim();
+    setForm(prev => ({ ...prev, [field]: str === "" ? "" : parseFloat(str) || 0 }));
+  };
 
   if (loading) return <DashboardLayout><div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600" /></div></DashboardLayout>;
 
@@ -222,7 +251,7 @@ const DeclaracionAnualPage = () => {
                 ].map(([key, label]) => (
                   <div key={key} className="space-y-1">
                     <Label className="text-xs">{label}</Label>
-                    <Input type="number" step="0.01" value={f(key)} onChange={e => setF(key, e.target.value)} data-testid={`input-${key}`} />
+                    <Input type="number" step="0.01" value={f(key)} onChange={e => setF(key, e.target.value)} placeholder="0.00" data-testid={`input-${key}`} />
                   </div>
                 ))}
               </div>
@@ -238,7 +267,7 @@ const DeclaracionAnualPage = () => {
                 ].map(([key, label]) => (
                   <div key={key} className="space-y-1">
                     <Label className="text-xs">{label}</Label>
-                    <Input type="number" step="0.01" value={f(key)} onChange={e => setF(key, e.target.value)} data-testid={`input-${key}`} />
+                    <Input type="number" step="0.01" value={f(key)} onChange={e => setF(key, e.target.value)} placeholder="0.00" data-testid={`input-${key}`} />
                   </div>
                 ))}
               </div>
@@ -255,7 +284,7 @@ const DeclaracionAnualPage = () => {
                 ].map(([key, label]) => (
                   <div key={key} className="space-y-1">
                     <Label className="text-xs">{label}</Label>
-                    <Input type="number" step="0.01" value={f(key)} onChange={e => setF(key, e.target.value)} data-testid={`input-${key}`} />
+                    <Input type="number" step="0.01" value={f(key)} onChange={e => setF(key, e.target.value)} placeholder="0.00" data-testid={`input-${key}`} />
                   </div>
                 ))}
               </div>
