@@ -58,6 +58,7 @@ from routes.exports import router as exports_router
 from routes.config import router as config_router
 from routes.declaracion import router as declaracion_router
 from routes.pld import router as pld_router
+from routes.dashboard_adv import router as dashboard_adv_router
 
 api_router.include_router(auth_router)
 api_router.include_router(auditoria_router)
@@ -74,6 +75,7 @@ api_router.include_router(exports_router)
 api_router.include_router(config_router)
 api_router.include_router(declaracion_router)
 api_router.include_router(pld_router)
+api_router.include_router(dashboard_adv_router)
 
 # ==================== ROOT ENDPOINTS ====================
 

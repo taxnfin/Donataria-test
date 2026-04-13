@@ -1,0 +1,137 @@
+{
+  "summary": "Iteration 11 testing completed for Semaforo de Cumplimiento and Reportes Operativos features. Backend: 22/22 tests passed (100%). Frontend: All UI features working correctly including semaforo widget with 4 clickable indicators, Reportes Operativos page with 6 tabs, and navigation.",
+  
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Dashboard and Reportes Operativos charts",
+        "issues": ["Console warning about chart width/height being -1 - minor rendering issue on initial load, does not affect functionality (known issue from iteration 10)"]
+      }
+    ]
+  },
+  
+  "passed_tests": [
+    "GET /api/dashboard/semaforo - returns 200",
+    "GET /api/dashboard/semaforo - has semaforo color and score_general",
+    "GET /api/dashboard/semaforo - has 4 indicators (cumplimiento, kyc, control_10, aml)",
+    "GET /api/dashboard/semaforo - control_10 has porcentaje field",
+    "GET /api/dashboard/semaforo - score_general is weighted average of 4 indicators",
+    "GET /api/dashboard/reportes-operativos - returns 200",
+    "GET /api/dashboard/reportes-operativos - has resumen with totals",
+    "GET /api/dashboard/reportes-operativos - has por_tipo array",
+    "GET /api/dashboard/reportes-operativos - has top_donantes with accumulation",
+    "GET /api/dashboard/reportes-operativos - has concentracion_80_20 analysis",
+    "GET /api/dashboard/reportes-operativos - has especie section",
+    "GET /api/dashboard/reportes-operativos - has extranjero section",
+    "GET /api/dashboard/reportes-operativos - has conciliacion CFDI section",
+    "GET /api/dashboard/ficha-publica - returns 200",
+    "GET /api/dashboard/ficha-publica - has organizacion info",
+    "GET /api/dashboard/ficha-publica - has ingresos_egresos",
+    "GET /api/dashboard/ficha-publica - has actividades",
+    "GET /api/dashboard/ficha-publica - has donantes_activos",
+    "GET /api/dashboard/ficha-publica - has estado_informe",
+    "Unauthenticated access to semaforo returns 401",
+    "Unauthenticated access to reportes-operativos returns 401",
+    "Unauthenticated access to ficha-publica returns 401",
+    "Frontend: Dashboard loads with semaforo widget",
+    "Frontend: Semaforo shows score (38.9%) and 4 indicators",
+    "Frontend: Semaforo indicators are clickable and navigate correctly",
+    "Frontend: Reportes Operativos page loads with 4 summary cards",
+    "Frontend: Reportes Operativos has 6 tabs",
+    "Frontend: Resumen por Tipo tab shows chart and 80/20 concentration",
+    "Frontend: Top Donantes tab shows sorted donor list with accumulation",
+    "Frontend: Conciliacion CFDI tab shows donativos vs CFDI status grid",
+    "Frontend: Ficha Publica tab shows org info, financials, activities",
+    "Frontend: Navigation sidebar shows Reportes Operativos link"
+  ],
+  
+  "test_report_links": [
+    "/app/backend/tests/test_semaforo_reportes.py",
+    "/app/test_reports/pytest/pytest_semaforo_reportes.xml"
+  ],
+  
+  "action_items": [],
+  
+  "critical_code_review_comments": [
+    "Semaforo correctly implements weighted average: cumplimiento*0.35 + kyc*0.25 + control10*0.20 + aml*0.20",
+    "Each indicator has proper color coding (verde>=80, ambar>=60, rojo<60)",
+    "Reportes Operativos correctly aggregates data from donativos, donantes, and cfdis collections",
+    "80/20 concentration analysis properly detects high concentration risk",
+    "Conciliacion CFDI correctly tracks donativos with/without CFDI and CFDI status",
+    "Ficha Publica aggregates transparency data from multiple sources",
+    "All endpoints properly require authentication"
+  ],
+  
+  "updated_files": [
+    "/app/backend/tests/test_semaforo_reportes.py"
+  ],
+  
+  "success_rate": {
+    "backend": "100% (22/22 tests passed)",
+    "frontend": "100% (all UI features working)"
+  },
+  
+  "test_credentials": {
+    "admin": {
+      "email": "test@donataria.org",
+      "password": "Test1234!"
+    }
+  },
+  
+  "seed_data_creation": "No new seed data created - used existing test data",
+  
+  "retest_needed": false,
+  
+  "should_main_agent_self_test": false,
+  
+  "context_for_next_testing_agent": "Iteration 11 tested the new Semaforo de Cumplimiento and Reportes Operativos features. The semaforo combines 4 weighted indicators (cumplimiento 35%, kyc 25%, control10 20%, aml 20%) and displays on the Dashboard with clickable indicators that navigate to respective pages. Reportes Operativos page has 6 tabs: Resumen por Tipo, Top Donantes, En Especie, Extranjero, Conciliacion CFDI, and Ficha Publica. All backend APIs return proper data structures. CFDI timbrado remains MOCKED.",
+  
+  "mocked_apis": {
+    "CFDI_PAC_Integration": "CFDI timbrado (stamping) is MOCKED - returns simulated UUID",
+    "Email_Notifications": "Email notifications MOCKED - RESEND_API_KEY not configured"
+  },
+  
+  "semaforo_summary": {
+    "features_tested": [
+      "Weighted score calculation (cumplimiento*0.35 + kyc*0.25 + control10*0.20 + aml*0.20)",
+      "4 indicators with individual scores and colors",
+      "Overall semaforo color (verde>=80, ambar>=60, rojo<60)",
+      "Clickable indicators navigating to respective pages"
+    ],
+    "current_test_data_scores": {
+      "score_general": "38.9%",
+      "semaforo_color": "rojo",
+      "cumplimiento": "33.3% (2/6 obligaciones)",
+      "kyc": "9% (1/11 donantes)",
+      "control_10": "0% (sin declaracion)",
+      "aml": "25% (5 alertas pendientes)"
+    }
+  },
+  
+  "reportes_operativos_summary": {
+    "features_tested": [
+      "4 summary cards (Total Donativos, Donantes Activos, En Especie, Del Extranjero)",
+      "6 tabs with real data",
+      "Resumen por Tipo with bar chart",
+      "80/20 concentration analysis with alert",
+      "Top Donantes with accumulation percentages",
+      "Conciliacion CFDI vs Donativos grid",
+      "Ficha Publica with org info and financials"
+    ],
+    "current_test_data": {
+      "total_donativos": 3,
+      "total_monto": "$180,000.00",
+      "donantes_activos": 2,
+      "donativos_con_cfdi": 2,
+      "donativos_sin_cfdi": 1,
+      "concentracion_alerta": true
+    }
+  }
+}

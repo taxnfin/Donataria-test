@@ -15,7 +15,12 @@ import {
   ArrowRight,
   Calendar,
   TrendingUp,
-  ShieldCheck
+  ShieldCheck,
+  Shield,
+  Fingerprint,
+  Scale,
+  CheckCircle2,
+  XCircle
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from "recharts";
 import axios from "axios";
@@ -25,6 +30,7 @@ import { toast } from "sonner";
 const DashboardPage = () => {
   const [stats, setStats] = useState(null);
   const [compliance, setCompliance] = useState(null);
+  const [semaforo, setSemaforo] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,12 +39,14 @@ const DashboardPage = () => {
 
   const fetchStats = async () => {
     try {
-      const [statsRes, complianceRes] = await Promise.all([
+      const [statsRes, complianceRes, semaforoRes] = await Promise.all([
         axios.get(`${API}/dashboard/stats`, { withCredentials: true }),
-        axios.get(`${API}/cumplimiento`, { withCredentials: true }).catch(() => ({ data: null }))
+        axios.get(`${API}/cumplimiento`, { withCredentials: true }).catch(() => ({ data: null })),
+        axios.get(`${API}/dashboard/semaforo`, { withCredentials: true }).catch(() => ({ data: null })),
       ]);
       setStats(statsRes.data);
       setCompliance(complianceRes.data);
+      setSemaforo(semaforoRes.data);
     } catch (error) {
       toast.error("Error al cargar estadísticas");
     } finally {
@@ -312,42 +320,51 @@ const DashboardPage = () => {
           </Card>
         </div>
 
-        {/* Compliance Mini-Widget */}
-        {compliance && (
-          <Link to="/cumplimiento">
-            <Card className="bg-white border-gray-100 shadow-[0_2px_10px_rgba(0,0,0,0.04)] hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer" data-testid="compliance-widget">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-4">
-                  <div className={`w-14 h-14 rounded-full flex items-center justify-center ${
-                    compliance.score >= 80 ? "bg-emerald-50" :
-                    compliance.score >= 60 ? "bg-blue-50" :
-                    compliance.score >= 40 ? "bg-amber-50" : "bg-red-50"
-                  }`}>
-                    <span className={`text-lg font-bold ${
-                      compliance.score >= 80 ? "text-emerald-600" :
-                      compliance.score >= 60 ? "text-blue-600" :
-                      compliance.score >= 40 ? "text-amber-600" : "text-red-600"
+        {/* Semaforo de Cumplimiento */}
+        {semaforo && (
+          <Card className="bg-white border-gray-100 shadow-[0_2px_10px_rgba(0,0,0,0.04)]" data-testid="semaforo-widget">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className={`w-4 h-4 rounded-full animate-pulse ${
+                  semaforo.semaforo === "verde" ? "bg-green-500" :
+                  semaforo.semaforo === "ambar" ? "bg-amber-500" : "bg-red-500"
+                }`} />
+                <h3 className="font-bold text-gray-900" style={{ fontFamily: 'Chivo, sans-serif' }}>
+                  Semaforo de Cumplimiento
+                </h3>
+                <span className={`ml-auto text-2xl font-bold ${
+                  semaforo.score_general >= 80 ? "text-green-600" :
+                  semaforo.score_general >= 60 ? "text-amber-600" : "text-red-600"
+                }`}>
+                  {semaforo.score_general}%
+                </span>
+              </div>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                {Object.entries(semaforo.indicadores).map(([key, ind]) => (
+                  <Link key={key} to={key === "cumplimiento" ? "/cumplimiento" : key === "kyc" ? "/pld" : key === "control_10" ? "/declaracion-anual" : "/alertas"}>
+                    <div className={`p-3 rounded-lg border transition-all hover:shadow-md cursor-pointer ${
+                      ind.color === "verde" ? "border-green-200 bg-green-50/50" :
+                      ind.color === "ambar" ? "border-amber-200 bg-amber-50/50" : "border-red-200 bg-red-50/50"
                     }`}>
-                      {compliance.score}%
-                    </span>
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                      <p className="font-medium text-gray-900">Score de Cumplimiento</p>
+                      <div className="flex items-center gap-2 mb-1">
+                        {ind.color === "verde" ? <CheckCircle2 className="w-3.5 h-3.5 text-green-600" /> :
+                         ind.color === "ambar" ? <AlertTriangle className="w-3.5 h-3.5 text-amber-600" /> :
+                         <XCircle className="w-3.5 h-3.5 text-red-600" />}
+                        <span className="text-xs font-medium text-gray-600">{ind.label}</span>
+                      </div>
+                      <p className={`text-lg font-bold ${
+                        ind.color === "verde" ? "text-green-700" :
+                        ind.color === "ambar" ? "text-amber-700" : "text-red-700"
+                      }`}>
+                        {key === "control_10" ? `${ind.porcentaje}%` : `${ind.score}%`}
+                      </p>
+                      <p className="text-[10px] text-gray-500 mt-0.5 truncate">{ind.detalle}</p>
                     </div>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      {compliance.resumen.cumplidas} de {compliance.resumen.total} obligaciones cumplidas
-                      {compliance.resumen.vencidas > 0 && (
-                        <span className="text-red-600 ml-1">({compliance.resumen.vencidas} vencidas)</span>
-                      )}
-                    </p>
-                  </div>
-                  <ArrowRight className="w-5 h-5 text-gray-400" />
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
+                  </Link>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Quick Actions */}

@@ -24,6 +24,7 @@ import AuditoriaPage from "./pages/AuditoriaPage";
 import CatalogoPage from "./pages/CatalogoPage";
 import DeclaracionAnualPage from "./pages/DeclaracionAnualPage";
 import PLDPage from "./pages/PLDPage";
+import ReportesOperativosPage from "./pages/ReportesOperativosPage";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 export const API = `${BACKEND_URL}/api`;
@@ -300,6 +301,14 @@ function AppRouter() {
         element={
           <ProtectedRoute>
             <PLDPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/reportes-operativos"
+        element={
+          <ProtectedRoute>
+            <ReportesOperativosPage />
           </ProtectedRoute>
         }
       />

@@ -34,7 +34,8 @@ import {
   Check,
   BookOpen,
   Scale,
-  Shield
+  Shield,
+  BarChart3
 } from "lucide-react";
 import axios from "axios";
 import { API } from "../App";
@@ -99,6 +100,7 @@ const DashboardLayout = ({ children }) => {
     { name: "Transparencia", href: "/transparencia", icon: ClipboardList },
     { name: "Alertas AML", href: "/alertas", icon: AlertTriangle, accent: "red" },
     { name: "Reportes", href: "/reportes", icon: FileBarChart },
+    { name: "Reportes Operativos", href: "/reportes-operativos", icon: BarChart3 },
     { name: "Workflows", href: "/workflows", icon: Workflow },
     { name: "Cumplimiento", href: "/cumplimiento", icon: ShieldCheck, accent: "emerald" },
     { name: "Declaracion Anual", href: "/declaracion-anual", icon: Scale },
