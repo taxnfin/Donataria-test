@@ -4,7 +4,7 @@ from typing import Optional
 import uuid
 from database import db
 from models import User, DonanteCreate
-from utils import get_current_user, validate_rfc, log_audit
+from utils import get_current_user, validate_rfc, log_audit, require_role
 
 router = APIRouter()
 
@@ -32,7 +32,7 @@ async def get_donantes(
     return donantes
 
 @router.post("/donantes")
-async def create_donante(data: DonanteCreate, user: User = Depends(get_current_user)):
+async def create_donante(data: DonanteCreate, user: User = Depends(require_role("admin", "editor"))):
     if not user.organizacion_id:
         raise HTTPException(status_code=400, detail="No tiene organización asignada")
     
@@ -76,7 +76,7 @@ async def get_donante(donante_id: str, user: User = Depends(get_current_user)):
     return donante
 
 @router.put("/donantes/{donante_id}")
-async def update_donante(donante_id: str, data: DonanteCreate, user: User = Depends(get_current_user)):
+async def update_donante(donante_id: str, data: DonanteCreate, user: User = Depends(require_role("admin", "editor"))):
     if not data.es_extranjero and data.rfc:
         if not validate_rfc(data.rfc, data.tipo_persona):
             raise HTTPException(status_code=400, detail="RFC inválido")
@@ -97,7 +97,7 @@ async def update_donante(donante_id: str, data: DonanteCreate, user: User = Depe
     return donante
 
 @router.delete("/donantes/{donante_id}")
-async def delete_donante(donante_id: str, user: User = Depends(get_current_user)):
+async def delete_donante(donante_id: str, user: User = Depends(require_role("admin"))):
     result = await db.donantes.delete_one(
         {"donante_id": donante_id, "organizacion_id": user.organizacion_id}
     )

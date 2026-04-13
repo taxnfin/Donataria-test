@@ -24,6 +24,7 @@ class User(BaseModel):
     picture: Optional[str] = None
     organizacion_id: Optional[str] = None
     organizaciones_ids: List[str] = []
+    roles: List[dict] = []  # [{"organizacion_id": "x", "role": "admin"}]
     created_at: datetime
 
 # ==================== ORGANIZACION MODELS ====================
@@ -266,3 +267,12 @@ class WorkflowCreate(BaseModel):
     condiciones: dict = {}
     acciones: List[dict] = []
     activo: bool = True
+
+# ==================== ROLES MODELS ====================
+class UserOrgRole(BaseModel):
+    organizacion_id: str
+    role: str  # "admin", "editor", "viewer"
+
+class RoleAssignment(BaseModel):
+    user_email: str
+    role: str  # "admin", "editor", "viewer"

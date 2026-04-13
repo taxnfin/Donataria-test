@@ -45,9 +45,11 @@ const DashboardLayout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [orgs, setOrgs] = useState([]);
   const [orgMenuOpen, setOrgMenuOpen] = useState(false);
+  const [userRole, setUserRole] = useState(null);
 
   useEffect(() => {
     fetchOrgs();
+    fetchRole();
   }, [user?.organizacion_id]);
 
   const fetchOrgs = async () => {
@@ -56,6 +58,15 @@ const DashboardLayout = ({ children }) => {
       setOrgs(response.data);
     } catch {
       setOrgs([]);
+    }
+  };
+
+  const fetchRole = async () => {
+    try {
+      const response = await axios.get(`${API}/organizacion/mi-rol`, { withCredentials: true });
+      setUserRole(response.data.role);
+    } catch {
+      setUserRole("admin");
     }
   };
 
@@ -142,8 +153,17 @@ const DashboardLayout = ({ children }) => {
                     <p className="text-sm font-medium text-white truncate">
                       {orgs.find(o => o.activa)?.nombre || "Seleccionar"}
                     </p>
-                    <p className="text-xs text-gray-500 truncate">
+                    <p className="text-xs text-gray-500 truncate flex items-center gap-1">
                       {orgs.find(o => o.activa)?.rfc || "RFC pendiente"}
+                      {userRole && (
+                        <span className={`inline-block px-1.5 py-0 rounded text-[10px] font-semibold uppercase ${
+                          userRole === 'admin' ? 'bg-emerald-600/30 text-emerald-300' :
+                          userRole === 'editor' ? 'bg-blue-600/30 text-blue-300' :
+                          'bg-gray-600/30 text-gray-300'
+                        }`} data-testid="role-badge">
+                          {userRole}
+                        </span>
+                      )}
                     </p>
                   </div>
                   <ChevronsUpDown className="w-4 h-4 text-gray-500 flex-shrink-0" />
@@ -295,7 +315,7 @@ const DashboardLayout = ({ children }) => {
 
         {/* Page content */}
         <main className="p-4 lg:p-8">
-          {children}
+          {typeof children === 'function' ? children({ userRole }) : children}
         </main>
       </div>
     </div>

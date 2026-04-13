@@ -7,7 +7,7 @@ import io
 import base64
 from database import db
 from models import User, CFDICreate
-from utils import get_current_user, log_audit, add_logo_to_story
+from utils import get_current_user, log_audit, add_logo_to_story, require_role
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -41,7 +41,7 @@ async def get_cfdis(
     return cfdis
 
 @router.post("/cfdis")
-async def create_cfdi(data: CFDICreate, user: User = Depends(get_current_user)):
+async def create_cfdi(data: CFDICreate, user: User = Depends(require_role("admin", "editor"))):
     if not user.organizacion_id:
         raise HTTPException(status_code=400, detail="No tiene organización asignada")
     
@@ -86,7 +86,7 @@ async def create_cfdi(data: CFDICreate, user: User = Depends(get_current_user)):
     return {k: v for k, v in cfdi_doc.items() if k != "_id"}
 
 @router.post("/cfdis/{cfdi_id}/timbrar")
-async def timbrar_cfdi(cfdi_id: str, user: User = Depends(get_current_user)):
+async def timbrar_cfdi(cfdi_id: str, user: User = Depends(require_role("admin", "editor"))):
     """Simulate CFDI timbrado (real PAC integration deferred to v1.5)"""
     cfdi = await db.cfdis.find_one(
         {"cfdi_id": cfdi_id, "organizacion_id": user.organizacion_id},
@@ -120,7 +120,7 @@ async def timbrar_cfdi(cfdi_id: str, user: User = Depends(get_current_user)):
     return result_data
 
 @router.post("/cfdis/{cfdi_id}/cancelar")
-async def cancelar_cfdi(cfdi_id: str, user: User = Depends(get_current_user)):
+async def cancelar_cfdi(cfdi_id: str, user: User = Depends(require_role("admin"))):
     cfdi = await db.cfdis.find_one(
         {"cfdi_id": cfdi_id, "organizacion_id": user.organizacion_id},
         {"_id": 0}

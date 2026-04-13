@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 import uuid
 from database import db
 from models import User, DonativoCreate
-from utils import get_current_user, log_audit
+from utils import get_current_user, log_audit, require_role
 from services import check_alert_rules, trigger_workflows
 
 router = APIRouter()
@@ -41,7 +41,7 @@ async def get_donativos(
     return donativos
 
 @router.post("/donativos")
-async def create_donativo(data: DonativoCreate, background_tasks: BackgroundTasks, user: User = Depends(get_current_user)):
+async def create_donativo(data: DonativoCreate, background_tasks: BackgroundTasks, user: User = Depends(require_role("admin", "editor"))):
     if not user.organizacion_id:
         raise HTTPException(status_code=400, detail="No tiene organización asignada")
     
@@ -97,7 +97,7 @@ async def get_donativo(donativo_id: str, user: User = Depends(get_current_user))
     return donativo
 
 @router.delete("/donativos/{donativo_id}")
-async def delete_donativo(donativo_id: str, user: User = Depends(get_current_user)):
+async def delete_donativo(donativo_id: str, user: User = Depends(require_role("admin"))):
     donativo = await db.donativos.find_one(
         {"donativo_id": donativo_id, "organizacion_id": user.organizacion_id},
         {"_id": 0}

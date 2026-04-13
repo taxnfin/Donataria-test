@@ -68,6 +68,10 @@ const AuthProvider = ({ children }) => {
     setUser(userData);
   };
 
+  const updateRole = (role) => {
+    setUser(prev => prev ? { ...prev, role } : null);
+  };
+
   const logout = async () => {
     try {
       await axios.post(`${API}/auth/logout`, {}, { withCredentials: true });
@@ -78,7 +82,7 @@ const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, checkAuth, refreshUser: checkAuth }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, checkAuth, refreshUser: checkAuth, updateRole }}>
       {children}
     </AuthContext.Provider>
   );

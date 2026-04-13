@@ -5,7 +5,7 @@ import base64
 import uuid
 import logging
 from datetime import datetime, timezone, timedelta
-from fastapi import HTTPException, Request
+from fastapi import HTTPException, Request, Depends
 from database import db
 from models import User
 
@@ -96,6 +96,31 @@ async def get_current_user(request: Request) -> User:
         raise HTTPException(status_code=401, detail="Token inválido")
 
 # ==================== COMMON HELPERS ====================
+
+def get_user_role(user, organizacion_id: str = None) -> str:
+    """Get user's role for the given (or active) organization"""
+    org_id = organizacion_id or (user.organizacion_id if hasattr(user, 'organizacion_id') else None)
+    if not org_id:
+        return "viewer"
+    roles = user.roles if hasattr(user, 'roles') else []
+    for r in roles:
+        if r.get("organizacion_id") == org_id:
+            return r.get("role", "viewer")
+    return "admin"  # Legacy users without roles array default to admin
+
+
+def require_role(*allowed_roles):
+    """FastAPI dependency factory that checks user role for the active org"""
+    async def _check_role(request: Request, user: User = Depends(get_current_user)):
+        role = get_user_role(user)
+        if role not in allowed_roles:
+            raise HTTPException(
+                status_code=403,
+                detail=f"Permisos insuficientes. Se requiere rol: {', '.join(allowed_roles)}"
+            )
+        return user
+    return _check_role
+
 
 def validate_rfc(rfc: str, tipo_persona: str) -> bool:
     if not rfc:
