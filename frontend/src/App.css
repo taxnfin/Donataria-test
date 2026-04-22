@@ -13,3 +13,12 @@
 .card-hover:hover {
     @apply shadow-lg -translate-y-1;
 }
+
+
+/* Hide Emergent preview badge */
+[data-testid="emergent-badge"],
+iframe[src*="emergentagent"],
+div[class*="emergent-badge"],
+a[href*="emergentagent.com"]:not([class]) {
+    display: none !important;
+}
