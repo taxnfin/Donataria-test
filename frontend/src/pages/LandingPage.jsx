@@ -140,7 +140,7 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
             {benefits.map((benefit, index) => (
-              <div key={index} className="flex items-center gap-3 text-white">
+              <div key={benefit} className="flex items-center gap-3 text-white">
                 <CheckCircle className="w-5 h-5 text-emerald-400 flex-shrink-0" />
                 <span className="text-sm">{benefit}</span>
               </div>
@@ -163,7 +163,7 @@ const LandingPage = () => {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {features.map((feature, index) => (
               <div 
-                key={index} 
+                key={feature.title} 
                 className="bg-white rounded-lg border border-gray-100 p-8 shadow-[0_2px_10px_rgba(0,0,0,0.04)] hover:shadow-lg hover:-translate-y-1 transition-all duration-200"
               >
                 <div className="w-14 h-14 bg-gray-50 rounded-lg flex items-center justify-center mb-6">
@@ -206,7 +206,7 @@ const LandingPage = () => {
                 { code: "CFF Art. 29", desc: "Requisitos de comprobantes fiscales" },
                 { code: "Ficha 19/ISR", desc: "Informe de transparencia" }
               ].map((item, index) => (
-                <div key={index} className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg">
+                <div key={item.code} className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg">
                   <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-sm font-medium rounded-full">
                     {item.code}
                   </span>

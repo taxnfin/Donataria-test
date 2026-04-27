@@ -84,7 +84,7 @@ const ConfiguracionPage = () => {
     fetchCronStatus();
     fetchMembers();
     fetchMyRole();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchCronStatus = async () => {
     try {

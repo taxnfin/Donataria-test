@@ -33,7 +33,7 @@ const DeclaracionAnualPage = () => {
   const [year, setYear] = useState(new Date().getFullYear());
   const [form, setForm] = useState({});
 
-  useEffect(() => { fetchDeclaraciones(); }, []);
+  useEffect(() => { fetchDeclaraciones(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchDeclaraciones = async () => {
     try {

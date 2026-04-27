@@ -103,7 +103,9 @@ const CatalogoPage = () => {
       const response = await axios.get(`${API}/catalogo/donatarias/giros`);
       setGiros(response.data.giros);
       setEstados(response.data.estados);
-    } catch {}
+    } catch (error) {
+      console.error("Error fetching giros/estados:", error);
+    }
   };
 
   const fetchItems = useCallback(async () => {
@@ -189,7 +191,9 @@ const CatalogoPage = () => {
     try {
       const response = await axios.get(`${API}/donantes`, { withCredentials: true });
       setDonantes(response.data);
-    } catch {}
+    } catch (error) {
+      console.error("Error fetching donantes:", error);
+    }
   };
 
   const handleOpenLinkDialog = () => {

@@ -1,3 +1,4 @@
+from conftest import TEST_EMAIL, TEST_PASSWORD, BASE_URL
 """
 Iteration 5 Tests: Report PDF, Logo Upload, Audit Log
 Tests for new features:

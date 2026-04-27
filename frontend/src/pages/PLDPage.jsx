@@ -50,7 +50,7 @@ const PLDPage = () => {
   const [donantes, setDonantes] = useState([]);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { loadAll(); }, []);
+  useEffect(() => { loadAll(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadAll = async () => {
     setLoading(true);
@@ -295,7 +295,7 @@ const PLDPage = () => {
                         <TableCell className="text-right">{fmt(m.total_donativos)}</TableCell>
                         <TableCell><div className="flex items-center gap-2"><div className="w-10 h-2 bg-gray-200 rounded-full overflow-hidden"><div className={`h-full rounded-full ${m.score_riesgo >= 60 ? "bg-red-500" : m.score_riesgo >= 40 ? "bg-orange-500" : m.score_riesgo >= 20 ? "bg-amber-400" : "bg-green-500"}`} style={{ width: `${m.score_riesgo}%` }} /></div><span className="text-xs font-mono">{m.score_riesgo}</span></div></TableCell>
                         <TableCell><Badge className={riskColor(m.nivel_riesgo)}>{m.nivel_riesgo}</Badge></TableCell>
-                        <TableCell><div className="flex flex-wrap gap-1">{m.factores.map((f, i) => <Badge key={i} variant="outline" className="text-[10px]">{f}</Badge>)}</div></TableCell>
+                        <TableCell><div className="flex flex-wrap gap-1">{m.factores.map((f, i) => <Badge key={`${f}-${i}`} variant="outline" className="text-[10px]">{f}</Badge>)}</div></TableCell>
                         <TableCell>{m.kyc_completo ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <XCircle className="w-4 h-4 text-red-400" />}</TableCell>
                       </TableRow>
                     ))}

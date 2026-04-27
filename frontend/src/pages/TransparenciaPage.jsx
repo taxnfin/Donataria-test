@@ -73,7 +73,7 @@ const TransparenciaPage = () => {
 
   useEffect(() => {
     fetchInformes();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchInformes = async () => {
     try {

@@ -1,3 +1,4 @@
+from conftest import TEST_EMAIL, TEST_PASSWORD, BASE_URL
 """
 Test suite for Iteration 11: Semaforo de Cumplimiento and Reportes Operativos
 Tests the new dashboard endpoints:

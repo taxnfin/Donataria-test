@@ -36,7 +36,7 @@ const DashboardPage = () => {
 
   useEffect(() => {
     fetchStats();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchStats = async () => {
     try {
@@ -303,7 +303,7 @@ const DashboardPage = () => {
                 <p className="text-gray-500 text-center py-8">No hay obligaciones próximas</p>
               ) : (
                 stats?.obligaciones_proximas?.map((obl, index) => (
-                  <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                  <div key={obl.obligacion_id || index} className="flex items-start gap-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
                     <div className={`w-3 h-3 rounded-full mt-1.5 ${getUrgencyColor(obl.urgencia)}`}></div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-gray-900 text-sm truncate">{obl.nombre}</p>

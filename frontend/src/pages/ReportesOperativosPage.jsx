@@ -26,7 +26,7 @@ const ReportesOperativosPage = () => {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("resumen");
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => { loadData(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadData = async () => {
     try {
@@ -102,7 +102,7 @@ const ReportesOperativosPage = () => {
                         <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11 }} tickFormatter={v => `$${(v/1000).toFixed(0)}k`} />
                         <Tooltip formatter={v => [fmt(v), "Monto"]} />
                         <Bar dataKey="monto" radius={[6, 6, 0, 0]}>
-                          {(d.por_tipo || []).map((entry, i) => <Cell key={i} fill={tipoColors[entry.tipo] || "#6b7280"} />)}
+                          {(d.por_tipo || []).map((entry, i) => <Cell key={entry.tipo || i} fill={tipoColors[entry.tipo] || "#6b7280"} />)}
                         </Bar>
                       </BarChart>
                     </ResponsiveContainer>

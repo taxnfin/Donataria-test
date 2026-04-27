@@ -39,7 +39,7 @@ const CumplimientoPage = () => {
 
   useEffect(() => {
     fetchMetrics();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchMetrics = async () => {
     try {
@@ -258,7 +258,7 @@ const CumplimientoPage = () => {
                     />
                     <Bar dataKey="porcentaje" radius={[4, 4, 0, 0]} maxBarSize={40}>
                       {(data?.chart_mensual || []).map((entry, index) => (
-                        <Cell key={index} fill={getBarColor(entry.porcentaje)} />
+                        <Cell key={entry.nombre || index} fill={getBarColor(entry.porcentaje)} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -317,7 +317,7 @@ const CumplimientoPage = () => {
               ) : (
                 <div className="space-y-4">
                   {(data?.desglose_tipo || []).map((item, index) => (
-                    <div key={index} className="space-y-1.5">
+                    <div key={item.tipo || index} className="space-y-1.5">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-gray-700 truncate mr-3">{item.tipo}</span>
                         <span className={`text-sm font-bold ${
@@ -364,7 +364,7 @@ const CumplimientoPage = () => {
                   </TableHeader>
                   <TableBody>
                     {(data?.proximas_vencer || []).map((item, index) => (
-                      <TableRow key={index} className="hover:bg-gray-50/50">
+                      <TableRow key={item.obligacion_id || index} className="hover:bg-gray-50/50">
                         <TableCell>
                           <p className="text-sm font-medium text-gray-900 truncate max-w-[200px]">{item.nombre}</p>
                           <p className="text-xs text-gray-400">

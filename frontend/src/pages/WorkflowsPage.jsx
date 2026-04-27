@@ -67,7 +67,7 @@ const WorkflowsPage = () => {
 
   useEffect(() => {
     fetchWorkflows();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchWorkflows = async () => {
     try {
@@ -281,7 +281,7 @@ const WorkflowsPage = () => {
                   {form.condiciones.length > 0 && (
                     <div className="space-y-2">
                       {form.condiciones.map((cond, index) => (
-                        <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                        <div key={`${cond.campo}-${cond.operador}-${index}`} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
                           <span className="text-sm flex-1">
                             <strong>{cond.campo}</strong> {cond.operador} <strong>{cond.valor}</strong>
                           </span>
@@ -341,7 +341,7 @@ const WorkflowsPage = () => {
                   {form.acciones.length > 0 && (
                     <div className="space-y-2">
                       {form.acciones.map((action, index) => (
-                        <div key={index} className="flex items-center gap-2 p-2 bg-violet-50 rounded-lg">
+                        <div key={`${action.tipo}-${action.destinatario}-${index}`} className="flex items-center gap-2 p-2 bg-violet-50 rounded-lg">
                           <Mail className="w-4 h-4 text-violet-600" />
                           <span className="text-sm flex-1">
                             Enviar email a <strong>{action.destinatario}</strong>
@@ -485,7 +485,7 @@ const WorkflowsPage = () => {
                         <ArrowRight className="w-4 h-4 text-gray-400" />
                         
                         {wf.acciones?.map((action, i) => (
-                          <Badge key={i} variant="outline" className="bg-violet-50 text-violet-700 border-violet-200">
+                          <Badge key={`${action.tipo}-${i}`} variant="outline" className="bg-violet-50 text-violet-700 border-violet-200">
                             {action.tipo === "email" ? <Mail className="w-3 h-3 mr-1" /> : <Bell className="w-3 h-3 mr-1" />}
                             {action.tipo === "email" ? "Enviar email" : "Crear alerta"}
                           </Badge>
