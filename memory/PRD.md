@@ -1,53 +1,42 @@
 # DonatariaSAT - Product Requirements Document
 
 ## Problem Statement
-SaaS for "DonatariaSAT" - management system for authorized charities in Mexico for tax compliance.
+SaaS for "DonatariaSAT" - authorized charities in Mexico tax compliance.
 
 ## Tech Stack
-React + Tailwind + Shadcn/UI + Recharts | FastAPI + MongoDB (Motor) | ReportLab (PDFs) | Resend (Emails)
+React + Tailwind + Shadcn/UI + Recharts | FastAPI + MongoDB (Motor) | ReportLab | Resend
 
 ## Architecture
 ```
-/app/backend/routes/
-├── auth.py, donantes.py, donativos.py, cfdis.py, fiscal.py
-├── alertas.py, workflows.py, reportes.py, cumplimiento.py
-├── exports.py, config.py, catalogo.py, auditoria.py
-├── declaracion.py, pld.py, dashboard_adv.py
-
 /app/frontend/src/
 ├── components/
-│   ├── ui/          (Shadcn components)
-│   ├── config/      (LogoUpload, Notifications, Cron, Members)
-│   ├── alertas/     (AlertRuleDialog, AlertasTable, ReglaCard)
-│   ├── reportes/    (ReporteDialogs)
-│   └── shared/      (CommonComponents, DataTable)
-├── pages/           (13 page components)
+│   ├── ui/            (Shadcn)
+│   ├── config/        (LogoUpload, Notifications, Cron, Members) ← NEW
+│   ├── alertas/       (AlertRuleDialog, AlertasTable, ReglaCard) ← NEW
+│   ├── reportes/      (ReporteComponents, ReporteDialogs) ← NEW
+│   ├── dashboard/     (SemaforoWidget, AnalyticsSection) ← NEW
+│   ├── pld/           (PLDTabs: 6 tab components) ← NEW
+│   └── shared/        (CommonComponents, DataTable) ← NEW
+├── pages/             (16 page components, 5 refactored)
+
+/app/backend/routes/   (16 route modules)
 ```
 
-## Implemented Features (22 total)
-1-22: [See previous PRD for full list]
+## Component Refactoring Status
+| Page | Before | After | Components Extracted |
+|------|--------|-------|---------------------|
+| ConfiguracionPage | 958 | 296 | 4 (Logo, Notifications, Cron, Members) |
+| AlertasPage | 612 | 138 | 3 (RuleDialog, Table, ReglaCard) |
+| ReportesPage | 663 | 138 | 2 (Table, PlantillasGrid) |
+| DashboardPage | 507 | 397 | 2 (Semaforo, Analytics) |
+| PLDPage | 493 | 145 | 6 (AML, OpsVuln, Avisos, Matriz, KYC, DD) |
+| **Total extracted** | | | **17 sub-components** |
 
-## Code Quality Applied
-- Test credentials centralized in conftest.py with env vars
-- Array index as key → stable IDs (12 instances fixed)
-- Empty catch blocks → console.error (2 instances)
-- eslint-disable-line for mount-only useEffects (14+ pages)
-- ConfiguracionPage split: 958 → 296 lines (4 sub-components)
-- AlertasPage split: 612 → 138 lines (3 sub-components)
-- Shared components created: CommonComponents, DataTable
+### Remaining (400-550 lines, functional but not split):
+TransparenciaPage, WorkflowsPage, CalendarioPage, CFDIsPage, CatalogoPage, DonantesPage, DonativosPage, CumplimientoPage
 
-## Remaining Refactoring (Fase 2 partial)
-The following pages still need dialog/form extraction (400-662 lines):
-ReportesPage (662), TransparenciaPage (551), WorkflowsPage (535),
-CalendarioPage (530), CFDIsPage (522), CatalogoPage (520),
-DashboardPage (506), PLDPage (492), DonantesPage (490),
-DonativosPage (476), CumplimientoPage (414)
-ReporteDialogs.jsx already created, needs to be wired into ReportesPage.
+## Implemented Features (22)
+1-22: Auth, Multi-org, RBAC, Donors, Donations, CFDIs, Obligations, Transparency, Dashboard, Alerts, Workflows, Exports, Compliance, Audit, Logo, SAT Catalog, Notifications, Declaracion Anual, PLD/AML, Semaforo, Reportes Operativos, Analytics+PDFs+Exports
 
-## MOCKED
-- CFDI timbrado (PAC) | Email notifications (sin RESEND_API_KEY)
-
-## Pending
-- P2: Real PAC Integration for CFDI stamping
-- P2: Webhook for PAC status updates
-- Remaining component splitting (11 pages)
+## MOCKED: CFDI timbrado (PAC) | Email (sin RESEND_API_KEY)
+## Pending: P2 Real PAC Integration | P2 PAC Webhooks
