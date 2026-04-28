@@ -26,6 +26,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import axios from "axios";
 import { API } from "../App";
 import { toast } from "sonner";
+import { SemaforoWidget } from "../components/dashboard/SemaforoWidget";
+import { AnalyticsSection } from "../components/dashboard/AnalyticsSection";
 
 const DashboardPage = () => {
   const [stats, setStats] = useState(null);
@@ -324,121 +326,10 @@ const DashboardPage = () => {
         </div>
 
         {/* Semaforo de Cumplimiento */}
-        {semaforo && (
-          <Card className="bg-white border-gray-100 shadow-[0_2px_10px_rgba(0,0,0,0.04)]" data-testid="semaforo-widget">
-            <CardContent className="p-5">
-              <div className="flex items-center gap-3 mb-4">
-                <div className={`w-4 h-4 rounded-full animate-pulse ${
-                  semaforo.semaforo === "verde" ? "bg-green-500" :
-                  semaforo.semaforo === "ambar" ? "bg-amber-500" : "bg-red-500"
-                }`} />
-                <h3 className="font-bold text-gray-900" style={{ fontFamily: 'Chivo, sans-serif' }}>
-                  Semaforo de Cumplimiento
-                </h3>
-                <span className={`ml-auto text-2xl font-bold ${
-                  semaforo.score_general >= 80 ? "text-green-600" :
-                  semaforo.score_general >= 60 ? "text-amber-600" : "text-red-600"
-                }`}>
-                  {semaforo.score_general}%
-                </span>
-              </div>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                {Object.entries(semaforo.indicadores).map(([key, ind]) => (
-                  <Link key={key} to={key === "cumplimiento" ? "/cumplimiento" : key === "kyc" ? "/pld" : key === "control_10" ? "/declaracion-anual" : "/alertas"}>
-                    <div className={`p-3 rounded-lg border transition-all hover:shadow-md cursor-pointer ${
-                      ind.color === "verde" ? "border-green-200 bg-green-50/50" :
-                      ind.color === "ambar" ? "border-amber-200 bg-amber-50/50" : "border-red-200 bg-red-50/50"
-                    }`}>
-                      <div className="flex items-center gap-2 mb-1">
-                        {ind.color === "verde" ? <CheckCircle2 className="w-3.5 h-3.5 text-green-600" /> :
-                         ind.color === "ambar" ? <AlertTriangle className="w-3.5 h-3.5 text-amber-600" /> :
-                         <XCircle className="w-3.5 h-3.5 text-red-600" />}
-                        <span className="text-xs font-medium text-gray-600">{ind.label}</span>
-                      </div>
-                      <p className={`text-lg font-bold ${
-                        ind.color === "verde" ? "text-green-700" :
-                        ind.color === "ambar" ? "text-amber-700" : "text-red-700"
-                      }`}>
-                        {key === "control_10" ? `${ind.porcentaje}%` : `${ind.score}%`}
-                      </p>
-                      <p className="text-[10px] text-gray-500 mt-0.5 truncate">{ind.detalle}</p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        <SemaforoWidget semaforo={semaforo} />
 
         {/* Analytics Trends */}
-        {analytics && (
-          <div className="space-y-4">
-            {/* YoY Comparison */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <Card className="bg-white border-gray-100">
-                <CardContent className="p-4">
-                  <p className="text-xs text-gray-500 mb-1">Donativos {analytics.comparativa_anual?.donativos_actual > 0 ? new Date().getFullYear() : ""}</p>
-                  <p className="text-xl font-bold text-gray-900">${(analytics.comparativa_anual?.donativos_actual || 0).toLocaleString("es-MX", { minimumFractionDigits: 0 })}</p>
-                  <div className={`flex items-center gap-1 mt-1 text-xs ${analytics.comparativa_anual?.variacion_pct >= 0 ? "text-emerald-600" : "text-red-600"}`}>
-                    <TrendingUp className="w-3 h-3" />
-                    <span>{analytics.comparativa_anual?.variacion_pct > 0 ? "+" : ""}{analytics.comparativa_anual?.variacion_pct}% vs año anterior</span>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="bg-white border-gray-100">
-                <CardContent className="p-4">
-                  <p className="text-xs text-gray-500 mb-1">Promedio por Donativo</p>
-                  <p className="text-xl font-bold text-blue-600">${(analytics.metricas?.promedio_donativo || 0).toLocaleString("es-MX", { minimumFractionDigits: 0 })}</p>
-                  <p className="text-xs text-gray-400 mt-1">{analytics.metricas?.total_donativos || 0} donativos totales</p>
-                </CardContent>
-              </Card>
-              <Card className="bg-white border-gray-100">
-                <CardContent className="p-4">
-                  <p className="text-xs text-gray-500 mb-1">Donantes Nuevos (este año)</p>
-                  <p className="text-xl font-bold text-violet-600">{analytics.comparativa_anual?.donantes_nuevos_actual || 0}</p>
-                  <p className="text-xs text-gray-400 mt-1">{analytics.comparativa_anual?.donantes_nuevos_anterior || 0} el año anterior</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Trend Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <Card className="bg-white border-gray-100">
-                <CardContent className="p-4">
-                  <p className="text-sm font-semibold text-gray-900 mb-3">Tendencia de Donativos (12 meses)</p>
-                  <div className="h-[180px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={analytics.tendencias?.donativos_mensual || []}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
-                        <XAxis dataKey="mes" axisLine={false} tickLine={false} tick={{ fontSize: 10 }} />
-                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10 }} tickFormatter={v => v >= 1000 ? `$${(v/1000).toFixed(0)}k` : `$${v}`} />
-                        <Tooltip formatter={(v) => [`$${v.toLocaleString()}`, "Monto"]} />
-                        <Area type="monotone" dataKey="monto" stroke="#059669" fill="#059669" fillOpacity={0.1} strokeWidth={2} />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="bg-white border-gray-100">
-                <CardContent className="p-4">
-                  <p className="text-sm font-semibold text-gray-900 mb-3">Alertas AML Generadas vs Resueltas</p>
-                  <div className="h-[180px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={analytics.tendencias?.alertas_mensual || []}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
-                        <XAxis dataKey="mes" axisLine={false} tickLine={false} tick={{ fontSize: 10 }} />
-                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10 }} />
-                        <Tooltip />
-                        <Bar dataKey="generadas" fill="#ef4444" radius={[4, 4, 0, 0]} name="Generadas" />
-                        <Bar dataKey="resueltas" fill="#22c55e" radius={[4, 4, 0, 0]} name="Resueltas" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        )}
+        <AnalyticsSection analytics={analytics} />
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
