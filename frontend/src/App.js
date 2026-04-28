@@ -25,6 +25,7 @@ import CatalogoPage from "./pages/CatalogoPage";
 import DeclaracionAnualPage from "./pages/DeclaracionAnualPage";
 import PLDPage from "./pages/PLDPage";
 import ReportesOperativosPage from "./pages/ReportesOperativosPage";
+import TaxnFinPage from "./pages/TaxnFinPage";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 export const API = `${BACKEND_URL}/api`;
@@ -174,6 +175,7 @@ function AppRouter() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
+      <Route path="/taxnfin" element={<TaxnFinPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route
