@@ -6,37 +6,42 @@ SaaS for "DonatariaSAT" - authorized charities in Mexico tax compliance.
 ## Tech Stack
 React + Tailwind + Shadcn/UI + Recharts | FastAPI + MongoDB (Motor) | ReportLab | Resend
 
-## Architecture
+## Architecture (Post-Refactoring)
 ```
 /app/frontend/src/
 ├── components/
-│   ├── ui/            (Shadcn)
-│   ├── config/        (LogoUpload, Notifications, Cron, Members) ← NEW
-│   ├── alertas/       (AlertRuleDialog, AlertasTable, ReglaCard) ← NEW
-│   ├── reportes/      (ReporteComponents, ReporteDialogs) ← NEW
-│   ├── dashboard/     (SemaforoWidget, AnalyticsSection) ← NEW
-│   ├── pld/           (PLDTabs: 6 tab components) ← NEW
-│   └── shared/        (CommonComponents, DataTable) ← NEW
-├── pages/             (16 page components, 5 refactored)
+│   ├── ui/              (Shadcn base components)
+│   ├── config/          (LogoUpload, Notifications, Cron, Members)
+│   ├── alertas/         (AlertRuleDialog, AlertComponents)
+│   ├── reportes/        (ReporteComponents, ReporteDialogs)
+│   ├── dashboard/       (SemaforoWidget, AnalyticsSection)
+│   ├── pld/             (PLDTabs - 6 tab components)
+│   ├── workflows/       (WorkflowComponents)
+│   ├── donantes/        (DonantesTable)
+│   ├── donativos/       (DonativosTable)
+│   ├── cfdis/           (CFDIsTable)
+│   ├── calendario/      (ObligacionCard)
+│   ├── transparencia/   (InformeCard)
+│   ├── catalogo/        (CatalogoTable)
+│   ├── cumplimiento/    (ComplianceComponents)
+│   └── shared/          (CommonComponents, DataTable)
+├── pages/               (16 pages, all <400 lines)
 
-/app/backend/routes/   (16 route modules)
+/app/backend/routes/     (16 route modules)
 ```
 
-## Component Refactoring Status
-| Page | Before | After | Components Extracted |
-|------|--------|-------|---------------------|
-| ConfiguracionPage | 958 | 296 | 4 (Logo, Notifications, Cron, Members) |
-| AlertasPage | 612 | 138 | 3 (RuleDialog, Table, ReglaCard) |
-| ReportesPage | 663 | 138 | 2 (Table, PlantillasGrid) |
-| DashboardPage | 507 | 397 | 2 (Semaforo, Analytics) |
-| PLDPage | 493 | 145 | 6 (AML, OpsVuln, Avisos, Matriz, KYC, DD) |
-| **Total extracted** | | | **17 sub-components** |
+## Refactoring Results
+| Metric | Before | After |
+|--------|--------|-------|
+| Total page lines | 8,420 | 3,999 (-52%) |
+| Largest page | 958 (Config) | 414 (Cumplimiento) |
+| Avg page size | 648 | 250 |
+| Extracted components | 0 | 21 |
+| Pages >500 lines | 8 | 0 |
+| Pages <150 lines | 0 | 11 |
 
-### Remaining (400-550 lines, functional but not split):
-TransparenciaPage, WorkflowsPage, CalendarioPage, CFDIsPage, CatalogoPage, DonantesPage, DonativosPage, CumplimientoPage
-
-## Implemented Features (22)
-1-22: Auth, Multi-org, RBAC, Donors, Donations, CFDIs, Obligations, Transparency, Dashboard, Alerts, Workflows, Exports, Compliance, Audit, Logo, SAT Catalog, Notifications, Declaracion Anual, PLD/AML, Semaforo, Reportes Operativos, Analytics+PDFs+Exports
+## Implemented Features (22 total)
+Auth, Multi-org, RBAC, Donors, Donations, CFDIs, Obligations, Transparency, Dashboard, Alerts, Workflows, Exports, Compliance, Audit, Logo, SAT Catalog, Notifications, Declaracion Anual, PLD/AML, Semaforo, Reportes Operativos, Analytics+PDFs+Exports
 
 ## MOCKED: CFDI timbrado (PAC) | Email (sin RESEND_API_KEY)
-## Pending: P2 Real PAC Integration | P2 PAC Webhooks
+## Pending: P2 Real PAC | P2 PAC Webhooks
