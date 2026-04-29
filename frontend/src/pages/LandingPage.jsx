@@ -168,49 +168,31 @@ function LandingTaxnFin({ onSwitch }) {
       {/* HERO */}
       <section style={{ background: 'linear-gradient(135deg,#0F2D5E 0%,#1E3A8A 100%)', padding: '80px 48px', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, opacity: .07, backgroundImage: 'radial-gradient(circle at 20% 30%, white 1px, transparent 1px), radial-gradient(circle at 80% 70%, white 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
-        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: 56, alignItems: 'center', position: 'relative' }}>
-          <div>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 600, padding: '6px 14px', borderRadius: 99, background: 'rgba(16,185,129,.15)', color: '#34d399', marginBottom: 22, border: '1px solid rgba(16,185,129,.3)' }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#34d399' }}></span>
-              CFO Digital para Empresas
-            </div>
-            <h1 style={{ fontSize: 56, fontWeight: 800, color: 'white', lineHeight: 1.05, marginBottom: 22, letterSpacing: '-.03em' }}>
-              Anticipa tus decisiones financieras con{' '}
-              <span style={{ background: 'linear-gradient(90deg,#60a5fa,#34d399)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>inteligencia</span>
-            </h1>
-            <p style={{ fontSize: 17, color: 'rgba(255,255,255,.75)', lineHeight: 1.65, marginBottom: 32, maxWidth: 480 }}>
-              TaxnFin es tu CFO digital. Anticipa, decide y optimiza el flujo de efectivo de tu empresa con análisis inteligente en tiempo real.
-            </p>
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-              <button onClick={() => navigate('/register')} style={{ padding: '14px 26px', background: '#0F2D5E', color: 'white', fontSize: 14, borderRadius: 10, border: '1px solid rgba(255,255,255,.2)', cursor: 'pointer', fontWeight: 700, boxShadow: '0 10px 25px -10px rgba(0,0,0,.5)' }} data-testid="taxnfin-solicitar-btn">Solicitar Demo →</button>
-              <button onClick={() => document.querySelector('#capacidades')?.scrollIntoView({ behavior: 'smooth' })} style={{ padding: '14px 26px', background: 'rgba(255,255,255,.08)', color: 'white', fontSize: 14, borderRadius: 10, border: '1px solid rgba(255,255,255,.2)', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" stroke="white" fill="none" /><path d="M5.5 4 L10 7 L5.5 10 Z" fill="white" /></svg>
-                Ver Funcionalidades
-              </button>
-            </div>
-            <div style={{ display: 'flex', gap: 28, marginTop: 32, flexWrap: 'wrap' }}>
-              {[
-                { icon: '🛡', t: 'Datos 100% seguros' },
-                { icon: '⚡', t: 'Setup en minutos' },
-                { icon: '📈', t: '+500 empresas' },
-              ].map(t => <span key={t.t} style={{ fontSize: 12, color: 'rgba(255,255,255,.7)', display: 'inline-flex', alignItems: 'center', gap: 6 }}><span style={{ fontSize: 14 }}>{t.icon}</span>{t.t}</span>)}
-            </div>
+        <div style={{ maxWidth: 960, margin: '0 auto', textAlign: 'center', position: 'relative' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 600, padding: '6px 14px', borderRadius: 99, background: 'rgba(16,185,129,.15)', color: '#34d399', marginBottom: 22, border: '1px solid rgba(16,185,129,.3)' }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#34d399' }}></span>
+            CFO Digital para Empresas
           </div>
-          <div style={{ background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.15)', borderRadius: 16, padding: 24, backdropFilter: 'blur(8px)' }}>
-            <div style={{ fontSize: 11, letterSpacing: '.08em', color: 'rgba(255,255,255,.5)', marginBottom: 10, fontWeight: 600 }}>FLUJO DE CAJA — SEMANA 13</div>
-            <div style={{ fontSize: 36, fontWeight: 800, color: 'white', marginBottom: 4, letterSpacing: '-.02em' }}>$2,847,320 MXN</div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,.5)', marginBottom: 20 }}>Posición de efectivo proyectada</div>
+          <h1 style={{ fontSize: 56, fontWeight: 800, color: 'white', lineHeight: 1.05, marginBottom: 22, letterSpacing: '-.03em' }}>
+            Anticipa tus decisiones financieras con{' '}
+            <span style={{ background: 'linear-gradient(90deg,#60a5fa,#34d399)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>inteligencia</span>
+          </h1>
+          <p style={{ fontSize: 17, color: 'rgba(255,255,255,.75)', lineHeight: 1.65, marginBottom: 32, maxWidth: 600, margin: '0 auto 32px' }}>
+            TaxnFin es tu CFO digital. Anticipa, decide y optimiza el flujo de efectivo de tu empresa con análisis inteligente en tiempo real.
+          </p>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <button onClick={() => navigate('/register')} style={{ padding: '14px 26px', background: 'white', color: '#0F2D5E', fontSize: 14, borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: 700, boxShadow: '0 10px 25px -10px rgba(0,0,0,.5)' }} data-testid="taxnfin-solicitar-btn">Solicitar Demo →</button>
+            <button onClick={() => document.querySelector('#capacidades')?.scrollIntoView({ behavior: 'smooth' })} style={{ padding: '14px 26px', background: 'rgba(255,255,255,.08)', color: 'white', fontSize: 14, borderRadius: 10, border: '1px solid rgba(255,255,255,.2)', cursor: 'pointer', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6.5" stroke="white" fill="none" /><path d="M5.5 4 L10 7 L5.5 10 Z" fill="white" /></svg>
+              Ver Funcionalidades
+            </button>
+          </div>
+          <div style={{ display: 'flex', gap: 28, marginTop: 32, flexWrap: 'wrap', justifyContent: 'center' }}>
             {[
-              { dot: '#34d399', label: 'CRM & Cotizador Pro', badge: '148 cotiz.' },
-              { dot: '#a78bfa', label: 'Cashflow 13 sem.', badge: 'Activo' },
-              { dot: '#fbbf24', label: 'Materialidad Fiscal', badge: 'Q2 2026' },
-              { dot: '#60a5fa', label: 'DonatariaSAT', badge: 'Incluido' },
-            ].map(item => (
-              <div key={item.label} style={{ background: 'rgba(255,255,255,.07)', borderRadius: 8, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, color: 'rgba(255,255,255,.85)', marginBottom: 8 }}>
-                <span><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: item.dot, marginRight: 10 }}></span>{item.label}</span>
-                <span style={{ background: 'rgba(255,255,255,.12)', padding: '3px 10px', borderRadius: 99, fontSize: 10, fontWeight: 600 }}>{item.badge}</span>
-              </div>
-            ))}
+              { icon: '🛡', t: 'Datos 100% seguros' },
+              { icon: '⚡', t: 'Setup en minutos' },
+              { icon: '📈', t: '+500 empresas' },
+            ].map(t => <span key={t.t} style={{ fontSize: 12, color: 'rgba(255,255,255,.7)', display: 'inline-flex', alignItems: 'center', gap: 6 }}><span style={{ fontSize: 14 }}>{t.icon}</span>{t.t}</span>)}
           </div>
         </div>
       </section>
@@ -295,13 +277,13 @@ function LandingTaxnFin({ onSwitch }) {
               testid="taxnfin-plan-starter"
               accent="#3B82F6"
               name="Starter"
-              price="$1,499"
+              price="$299"
               period="/ mes MXN"
               features={[
                 '1 entidad jurídica',
                 'Cashflow 13 semanas básico',
-                'CRM hasta 100 contactos',
-                'Cotizador profesional',
+                'Dashboard financiero',
+                'Reportes operativos',
                 'Soporte por correo',
               ]}
               cta="Empezar Starter"
@@ -312,12 +294,11 @@ function LandingTaxnFin({ onSwitch }) {
               accent="#0F2D5E"
               highlight
               name="Growth"
-              price="$3,499"
+              price="$499"
               period="/ mes MXN"
               features={[
                 'Hasta 3 entidades jurídicas',
                 'Cashflow 13 sem. con IA y forecast',
-                'CRM y cotizador ilimitado',
                 'Materialidad fiscal AML',
                 'Integraciones bancarias y ERP',
                 'Soporte prioritario',
@@ -409,42 +390,24 @@ function LandingDonataria({ onSwitch }) {
       {/* HERO */}
       <section style={{ background: 'linear-gradient(135deg,#064E3B 0%,#065f46 100%)', padding: '80px 48px', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, opacity: .07, backgroundImage: 'radial-gradient(circle at 20% 30%, white 1px, transparent 1px), radial-gradient(circle at 80% 70%, white 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
-        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: 56, alignItems: 'center', position: 'relative' }}>
-          <div>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 600, padding: '6px 14px', borderRadius: 99, background: 'rgba(52,211,153,.15)', color: '#34d399', marginBottom: 22, border: '1px solid rgba(52,211,153,.3)' }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#34d399' }}></span>
-              Parte de la suite TaxnFin
-            </div>
-            <h1 style={{ fontSize: 54, fontWeight: 800, color: 'white', lineHeight: 1.05, marginBottom: 22, letterSpacing: '-.03em' }}>
-              Cumplimiento fiscal para{' '}
-              <span style={{ background: 'linear-gradient(90deg,#34d399,#a7f3d0)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>donatarias autorizadas</span>
-            </h1>
-            <p style={{ fontSize: 17, color: 'rgba(255,255,255,.75)', lineHeight: 1.65, marginBottom: 32, maxWidth: 480 }}>
-              Gestiona donantes, emite CFDIs y cumple con el Título III de la LISR sin contratar un despacho externo.
-            </p>
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-              <button onClick={() => navigate('/register')} style={{ padding: '14px 26px', background: 'white', color: '#065f46', fontSize: 14, borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: 700, boxShadow: '0 10px 25px -10px rgba(0,0,0,.5)' }} data-testid="hero-register-btn">Comenzar gratis</button>
-              <button onClick={() => document.querySelector('#funcionalidades')?.scrollIntoView({ behavior: 'smooth' })} style={{ padding: '14px 26px', background: 'rgba(255,255,255,.08)', color: 'white', fontSize: 14, borderRadius: 10, border: '1px solid rgba(255,255,255,.2)', cursor: 'pointer', fontWeight: 600 }}>Ver funcionalidades</button>
-            </div>
-            <div style={{ display: 'flex', gap: 28, marginTop: 32, flexWrap: 'wrap' }}>
-              {['Alineado con la LISR', 'Datos seguros', 'Módulo PLD incluido'].map(t => <span key={t} style={{ fontSize: 12, color: 'rgba(255,255,255,.7)' }}>✓ {t}</span>)}
-            </div>
+        <div style={{ maxWidth: 960, margin: '0 auto', textAlign: 'center', position: 'relative' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 600, padding: '6px 14px', borderRadius: 99, background: 'rgba(52,211,153,.15)', color: '#34d399', marginBottom: 22, border: '1px solid rgba(52,211,153,.3)' }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#34d399' }}></span>
+            Parte de la suite TaxnFin
           </div>
-          <div style={{ background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.15)', borderRadius: 16, padding: 24, backdropFilter: 'blur(8px)' }}>
-            <div style={{ fontSize: 11, letterSpacing: '.08em', color: 'rgba(255,255,255,.5)', marginBottom: 10, fontWeight: 600 }}>DASHBOARD DONATARIA</div>
-            <div style={{ fontSize: 36, fontWeight: 800, color: 'white', marginBottom: 4, letterSpacing: '-.02em' }}>$1,240,000 MXN</div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,.5)', marginBottom: 20 }}>Donativos recibidos 2026</div>
-            {[
-              { dot: '#34d399', label: 'Donantes activos', badge: '47' },
-              { dot: '#60a5fa', label: 'CFDIs timbrados', badge: '89' },
-              { dot: '#fbbf24', label: 'Obligaciones pendientes', badge: '3' },
-              { dot: '#f87171', label: 'Alertas PLD', badge: '1 nueva' },
-            ].map(item => (
-              <div key={item.label} style={{ background: 'rgba(255,255,255,.07)', borderRadius: 8, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, color: 'rgba(255,255,255,.85)', marginBottom: 8 }}>
-                <span><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: item.dot, marginRight: 10 }}></span>{item.label}</span>
-                <span style={{ background: 'rgba(255,255,255,.12)', padding: '3px 10px', borderRadius: 99, fontSize: 10, fontWeight: 600 }}>{item.badge}</span>
-              </div>
-            ))}
+          <h1 style={{ fontSize: 54, fontWeight: 800, color: 'white', lineHeight: 1.05, marginBottom: 22, letterSpacing: '-.03em' }}>
+            Cumplimiento fiscal para{' '}
+            <span style={{ background: 'linear-gradient(90deg,#34d399,#a7f3d0)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>donatarias autorizadas</span>
+          </h1>
+          <p style={{ fontSize: 17, color: 'rgba(255,255,255,.75)', lineHeight: 1.65, marginBottom: 32, maxWidth: 600, margin: '0 auto 32px' }}>
+            Gestiona donantes, emite CFDIs y cumple con el Título III de la LISR sin contratar un despacho externo.
+          </p>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <button onClick={() => navigate('/register')} style={{ padding: '14px 26px', background: 'white', color: '#065f46', fontSize: 14, borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: 700, boxShadow: '0 10px 25px -10px rgba(0,0,0,.5)' }} data-testid="hero-register-btn">Comenzar gratis</button>
+            <button onClick={() => document.querySelector('#funcionalidades')?.scrollIntoView({ behavior: 'smooth' })} style={{ padding: '14px 26px', background: 'rgba(255,255,255,.08)', color: 'white', fontSize: 14, borderRadius: 10, border: '1px solid rgba(255,255,255,.2)', cursor: 'pointer', fontWeight: 600 }}>Ver funcionalidades</button>
+          </div>
+          <div style={{ display: 'flex', gap: 28, marginTop: 32, flexWrap: 'wrap', justifyContent: 'center' }}>
+            {['Alineado con la LISR', 'Datos seguros', 'Módulo PLD incluido'].map(t => <span key={t} style={{ fontSize: 12, color: 'rgba(255,255,255,.7)' }}>✓ {t}</span>)}
           </div>
         </div>
       </section>
@@ -518,10 +481,11 @@ function LandingDonataria({ onSwitch }) {
               accent="#065f46"
               highlight
               name="Profesional"
-              price="$899"
+              price="$399"
               period="/ mes MXN"
               features={[
-                'Donantes y CFDIs ilimitados',
+                'Donantes ilimitados',
+                'Hasta 500 CFDIs al mes',
                 'Módulo PLD / AML completo',
                 'Avisos UIF y matriz de riesgo',
                 'Declaración anual (Título III LISR)',
