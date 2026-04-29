@@ -18,7 +18,7 @@ import { toast } from "sonner";
 import { Link } from "react-router-dom";
 
 const fmt = (v) => `$${(v || 0).toLocaleString("es-MX", { minimumFractionDigits: 2 })}`;
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 const ReportesOperativosPage = () => {
   const [data, setData] = useState(null);

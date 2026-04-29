@@ -14,7 +14,7 @@ import { API } from "../App";
 import { toast } from "sonner";
 import { CFDIsTable } from "../components/cfdis/CFDIsTable";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 const CFDIsPage = () => {
   const [cfdis, setCfdis] = useState([]);

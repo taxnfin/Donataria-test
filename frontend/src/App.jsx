@@ -27,7 +27,7 @@ import PLDPage from "./pages/PLDPage";
 import ReportesOperativosPage from "./pages/ReportesOperativosPage";
 import TaxnFinPage from "./pages/TaxnFinPage";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 export const API = `${BACKEND_URL}/api`;
 
 // Auth Context

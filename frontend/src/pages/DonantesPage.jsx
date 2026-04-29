@@ -13,7 +13,7 @@ import { API } from "../App";
 import { toast } from "sonner";
 import { DonantesTable } from "../components/donantes/DonantesTable";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 const DonantesPage = () => {
   const [donantes, setDonantes] = useState([]);

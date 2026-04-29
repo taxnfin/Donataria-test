@@ -21,7 +21,7 @@ import axios from "axios";
 import { API } from "../App";
 import { toast } from "sonner";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 const fmt = (v) => `$${(v || 0).toLocaleString("es-MX", { minimumFractionDigits: 2 })}`;
 
 const DeclaracionAnualPage = () => {

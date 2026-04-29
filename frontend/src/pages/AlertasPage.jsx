@@ -14,7 +14,7 @@ import { AlertRuleDialog } from "../components/alertas/AlertRuleDialog";
 import { AlertasTable, ReglaCard } from "../components/alertas/AlertComponents";
 import { PageHeader } from "../components/shared/CommonComponents";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 const AlertasPage = () => {
   const [activeTab, setActiveTab] = useState("alertas");
