@@ -34,27 +34,11 @@ api_router = APIRouter(prefix="/api")
 
 # CORS
 # CORS
-# Accepts:
-#   - Exact origins from the CORS_ORIGINS env var (comma-separated)
-#   - https://donatariasat.taxnfin.com (production domain)
-#   - Any *.taxn-fin.vercel.app subdomain (Vercel preview + production deploys)
-_cors_env = os.environ.get("CORS_ORIGINS", "").strip()
-_allowed_origins = [o.strip() for o in _cors_env.split(",") if o.strip()] if _cors_env else []
-# Always whitelist the production custom domain
-if "https://donatariasat.taxnfin.com" not in _allowed_origins:
-    _allowed_origins.append("https://donatariasat.taxnfin.com")
-
-# Regex that matches all Vercel preview/production URLs for this project.
-# Vercel URLs have the pattern:
-#   https://taxn-fin.vercel.app                    (production)
-#   https://taxn-fin-git-<branch>-<scope>.vercel.app  (branch preview)
-#   https://taxn-fin-<hash>-<scope>.vercel.app     (commit preview)
-# Must start with "taxn-fin" and end with ".vercel.app" (no subdomain spoofing).
-_allowed_origin_regex = r"^https://taxn-fin(-[a-z0-9-]+)?\.vercel\.app$"
+# Matches any Vercel deployment (*.vercel.app) and the production custom domain.
+_allowed_origin_regex = r"https://.*\.vercel\.app|https://donatariasat\.taxnfin\.com"
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=_allowed_origins,
     allow_origin_regex=_allowed_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
