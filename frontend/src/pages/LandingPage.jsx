@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-// ── Logo Corporativo TaxnFin ────────────────────────────────
-// Barras ascendentes + flecha + acento dorado. Versión SVG escalable.
 const LogoTaxnFin = ({ size = 32, variant = 'light' }) => {
   const text = variant === 'light' ? '#0F2D5E' : 'white';
   const accent = '#10B981';
@@ -23,13 +21,10 @@ const LogoTaxnFin = ({ size = 32, variant = 'light' }) => {
             <stop offset="1" stopColor="#34D399" />
           </linearGradient>
         </defs>
-        {/* base */}
         <rect x="3" y="32" width="34" height="2.2" rx="1.1" fill={text} opacity=".15" />
-        {/* barras */}
         <rect x="6"  y="22" width="6" height="10" rx="1.5" fill="url(#tf-bar1)" />
         <rect x="14" y="16" width="6" height="16" rx="1.5" fill="url(#tf-bar2)" />
         <rect x="22" y="10" width="6" height="22" rx="1.5" fill="url(#tf-bar1)" />
-        {/* flecha */}
         <path d="M5 26 L14 18 L22 22 L34 8" stroke="url(#tf-arrow)" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
         <circle cx="34" cy="8" r="2.6" fill={accent} />
       </svg>
@@ -61,7 +56,6 @@ const LogoDonataria = ({ variant = 'light' }) => {
   );
 };
 
-// ── Tarjeta de precios reutilizable ────────────────────────
 const PriceCard = ({ name, price, period, features, cta, onClick, highlight, accent, testid }) => (
   <div
     style={{
@@ -120,7 +114,6 @@ const PriceCard = ({ name, price, period, features, cta, onClick, highlight, acc
   </div>
 );
 
-// ── Landing TaxnFin ────────────────────────────────────────
 function LandingTaxnFin({ onSwitch }) {
   const navigate = useNavigate();
 
@@ -141,7 +134,6 @@ function LandingTaxnFin({ onSwitch }) {
 
   return (
     <div style={{ fontFamily: 'system-ui, -apple-system, sans-serif', color: '#0F172A' }}>
-      {/* NAV */}
       <nav style={{ background: 'white', padding: '16px 48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #f1f5f9', position: 'sticky', top: 0, zIndex: 50 }}>
         <LogoTaxnFin />
         <div style={{ display: 'flex', gap: 32, fontSize: 14, color: '#475569' }}>
@@ -162,10 +154,9 @@ function LandingTaxnFin({ onSwitch }) {
       {/* TABS */}
       <div style={{ background: '#f8fafc', display: 'flex', padding: '0 48px', borderBottom: '1px solid #e2e8f0' }}>
         <button style={{ padding: '10px 18px', fontSize: 12, fontWeight: 600, color: '#0F2D5E', background: 'none', border: 'none', borderBottom: '2px solid #0F2D5E', cursor: 'pointer' }}>taxnfin.com</button>
-        <button onClick={() => onSwitch('donataria')} style={{ padding: '10px 18px', fontSize: 12, color: '#64748b', background: 'none', border: 'none', borderBottom: '2px solid transparent', cursor: 'pointer' }} data-testid="switch-donataria-tab">donatariasat.taxnfin.com →</button>
+        <button onClick={() => window.location.href='https://donatariasat.taxnfin.com'} style={{ padding: '10px 18px', fontSize: 12, color: '#64748b', background: 'none', border: 'none', borderBottom: '2px solid transparent', cursor: 'pointer' }} data-testid="switch-donataria-tab">donatariasat.taxnfin.com →</button>
       </div>
 
-      {/* HERO */}
       <section style={{ background: 'linear-gradient(135deg,#0F2D5E 0%,#1E3A8A 100%)', padding: '80px 48px', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, opacity: .07, backgroundImage: 'radial-gradient(circle at 20% 30%, white 1px, transparent 1px), radial-gradient(circle at 80% 70%, white 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
         <div style={{ maxWidth: 960, margin: '0 auto', textAlign: 'center', position: 'relative' }}>
@@ -197,7 +188,6 @@ function LandingTaxnFin({ onSwitch }) {
         </div>
       </section>
 
-      {/* CAPACIDADES */}
       <section id="capacidades" style={{ padding: '88px 48px', background: '#F8FAFC' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', textAlign: 'center' }}>
           <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.12em', color: '#3B82F6', marginBottom: 14 }}>CAPACIDADES</div>
@@ -221,7 +211,6 @@ function LandingTaxnFin({ onSwitch }) {
         </div>
       </section>
 
-      {/* PROCESO */}
       <section id="proceso" style={{ padding: '88px 48px', background: 'white' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', textAlign: 'center' }}>
           <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.12em', color: '#3B82F6', marginBottom: 14 }}>PROCESO</div>
@@ -249,7 +238,6 @@ function LandingTaxnFin({ onSwitch }) {
         </div>
       </section>
 
-      {/* IMPACTO */}
       <section id="impacto" style={{ background: '#0F2D5E', padding: '72px 48px', textAlign: 'center' }}>
         <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.12em', color: '#34d399', marginBottom: 14 }}>RESULTADOS</div>
         <h2 style={{ fontSize: 36, fontWeight: 800, color: 'white', marginBottom: 12, letterSpacing: '-.02em' }}>El impacto de tener un CFO digital</h2>
@@ -264,7 +252,6 @@ function LandingTaxnFin({ onSwitch }) {
         </div>
       </section>
 
-      {/* PRECIOS */}
       <section id="precios" style={{ padding: '88px 48px', background: '#F8FAFC' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', textAlign: 'center' }}>
           <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.12em', color: '#3B82F6', marginBottom: 14 }}>PRECIOS</div>
@@ -273,64 +260,16 @@ function LandingTaxnFin({ onSwitch }) {
             Elige el plan ideal para tu empresa. Sin contratos forzosos, cancela cuando quieras.
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: 24, textAlign: 'left', alignItems: 'stretch' }}>
-            <PriceCard
-              testid="taxnfin-plan-starter"
-              accent="#3B82F6"
-              name="Starter"
-              price="$299"
-              period="/ mes MXN"
-              features={[
-                '1 entidad jurídica',
-                'Cashflow 13 semanas básico',
-                'Dashboard financiero',
-                'Reportes operativos',
-                'Soporte por correo',
-              ]}
-              cta="Empezar Starter"
-              onClick={() => navigate('/register')}
-            />
-            <PriceCard
-              testid="taxnfin-plan-growth"
-              accent="#0F2D5E"
-              highlight
-              name="Growth"
-              price="$499"
-              period="/ mes MXN"
-              features={[
-                'Hasta 3 entidades jurídicas',
-                'Cashflow 13 sem. con IA y forecast',
-                'Materialidad fiscal AML',
-                'Integraciones bancarias y ERP',
-                'Soporte prioritario',
-              ]}
-              cta="Elegir Growth"
-              onClick={() => navigate('/register')}
-            />
-            <PriceCard
-              testid="taxnfin-plan-enterprise"
-              accent="#10B981"
-              name="Enterprise"
-              price="A medida"
-              period=""
-              features={[
-                'Entidades ilimitadas',
-                'Onboarding e implementación dedicada',
-                'API privada y SSO',
-                'SLA 99.9% y CSM dedicado',
-                'Capacitación in-company',
-                'DonatariaSAT incluido sin costo',
-              ]}
-              cta="Hablar con ventas"
-              onClick={() => navigate('/register')}
-            />
+            <PriceCard testid="taxnfin-plan-starter" accent="#3B82F6" name="Starter" price="$299" period="/ mes MXN" features={['1 entidad jurídica','Cashflow 13 semanas básico','Dashboard financiero','Reportes operativos','Soporte por correo']} cta="Empezar Starter" onClick={() => navigate('/register')} />
+            <PriceCard testid="taxnfin-plan-growth" accent="#0F2D5E" highlight name="Growth" price="$499" period="/ mes MXN" features={['Hasta 3 entidades jurídicas','Cashflow 13 sem. con IA y forecast','Materialidad fiscal AML','Integraciones bancarias y ERP','Soporte prioritario']} cta="Elegir Growth" onClick={() => navigate('/register')} />
+            <PriceCard testid="taxnfin-plan-enterprise" accent="#10B981" name="Enterprise" price="A medida" period="" features={['Entidades ilimitadas','Onboarding e implementación dedicada','API privada y SSO','SLA 99.9% y CSM dedicado','Capacitación in-company','DonatariaSAT incluido sin costo']} cta="Hablar con ventas" onClick={() => navigate('/register')} />
           </div>
           <div style={{ marginTop: 28, fontSize: 13, color: '#64748b' }}>
-            Precios en pesos mexicanos. IVA no incluido. ¿Eres OSC autorizada? <button onClick={() => onSwitch('donataria')} style={{ background: 'none', border: 'none', color: '#10B981', cursor: 'pointer', fontWeight: 700, padding: 0 }}>Ver planes DonatariaSAT →</button>
+            Precios en pesos mexicanos. IVA no incluido. ¿Eres OSC autorizada? <button onClick={() => window.location.href='https://donatariasat.taxnfin.com'} style={{ background: 'none', border: 'none', color: '#10B981', cursor: 'pointer', fontWeight: 700, padding: 0 }}>Ver planes DonatariaSAT →</button>
           </div>
         </div>
       </section>
 
-      {/* CTA */}
       <section style={{ background: 'linear-gradient(135deg,#0F2D5E,#1E3A8A)', padding: '72px 48px', textAlign: 'center' }}>
         <h2 style={{ fontSize: 36, fontWeight: 800, color: 'white', marginBottom: 14, letterSpacing: '-.02em' }}>Tu empresa merece herramientas de CFO</h2>
         <p style={{ fontSize: 15, color: 'rgba(255,255,255,.7)', marginBottom: 30 }}>Sin instalaciones, sin Excel manual. Empieza hoy.</p>
@@ -345,7 +284,6 @@ function LandingTaxnFin({ onSwitch }) {
   );
 }
 
-// ── Landing DonatariaSAT ───────────────────────────────────
 function LandingDonataria({ onSwitch }) {
   const navigate = useNavigate();
 
@@ -360,7 +298,6 @@ function LandingDonataria({ onSwitch }) {
 
   return (
     <div style={{ fontFamily: 'system-ui, -apple-system, sans-serif', color: '#0F172A' }}>
-      {/* NAV */}
       <nav style={{ background: 'white', padding: '16px 48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #f1f5f9', position: 'sticky', top: 0, zIndex: 50 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <LogoDonataria />
@@ -383,11 +320,10 @@ function LandingDonataria({ onSwitch }) {
 
       {/* TABS */}
       <div style={{ background: '#f8fafc', display: 'flex', padding: '0 48px', borderBottom: '1px solid #e2e8f0' }}>
-        <button onClick={() => onSwitch('taxnfin')} style={{ padding: '10px 18px', fontSize: 12, color: '#64748b', background: 'none', border: 'none', borderBottom: '2px solid transparent', cursor: 'pointer' }} data-testid="switch-taxnfin-tab">← taxnfin.com</button>
+        <button onClick={() => window.location.href='https://taxnfin.com'} style={{ padding: '10px 18px', fontSize: 12, color: '#64748b', background: 'none', border: 'none', borderBottom: '2px solid transparent', cursor: 'pointer' }} data-testid="switch-taxnfin-tab">← Cashflow TaxnFin</button>
         <button style={{ padding: '10px 18px', fontSize: 12, fontWeight: 600, color: '#065f46', background: 'none', border: 'none', borderBottom: '2px solid #10B981', cursor: 'pointer' }}>donatariasat.taxnfin.com</button>
       </div>
 
-      {/* HERO */}
       <section style={{ background: 'linear-gradient(135deg,#064E3B 0%,#065f46 100%)', padding: '80px 48px', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, opacity: .07, backgroundImage: 'radial-gradient(circle at 20% 30%, white 1px, transparent 1px), radial-gradient(circle at 80% 70%, white 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
         <div style={{ maxWidth: 960, margin: '0 auto', textAlign: 'center', position: 'relative' }}>
@@ -412,7 +348,6 @@ function LandingDonataria({ onSwitch }) {
         </div>
       </section>
 
-      {/* FUNCIONALIDADES */}
       <section id="funcionalidades" style={{ padding: '88px 48px', background: '#F8FAFC' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', textAlign: 'center' }}>
           <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.12em', color: '#10B981', marginBottom: 14 }}>FUNCIONALIDADES</div>
@@ -436,7 +371,6 @@ function LandingDonataria({ onSwitch }) {
         </div>
       </section>
 
-      {/* IMPACTO */}
       <section style={{ background: '#064E3B', padding: '72px 48px', textAlign: 'center' }}>
         <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.12em', color: '#34d399', marginBottom: 14 }}>IMPACTO</div>
         <h2 style={{ fontSize: 36, fontWeight: 800, color: 'white', marginBottom: 12, letterSpacing: '-.02em' }}>Lo que logran las donatarias con DonatariaSAT</h2>
@@ -451,7 +385,6 @@ function LandingDonataria({ onSwitch }) {
         </div>
       </section>
 
-      {/* PRECIOS */}
       <section id="precios" style={{ padding: '88px 48px', background: 'white' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', textAlign: 'center' }}>
           <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.12em', color: '#10B981', marginBottom: 14 }}>PRECIOS</div>
@@ -460,58 +393,9 @@ function LandingDonataria({ onSwitch }) {
             Empieza gratis. Sin contratos forzosos, sin tarjeta de crédito.
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: 24, textAlign: 'left', alignItems: 'stretch' }}>
-            <PriceCard
-              testid="donataria-plan-free"
-              accent="#0EA5E9"
-              name="Esencial"
-              price="$0"
-              period="/ mes — para siempre"
-              features={[
-                'Hasta 25 donantes activos',
-                'Hasta 50 CFDIs al mes',
-                'Calendario fiscal básico',
-                'Dashboard y reportes operativos',
-                'Comunidad y centro de ayuda',
-              ]}
-              cta="Empezar gratis"
-              onClick={() => navigate('/register')}
-            />
-            <PriceCard
-              testid="donataria-plan-pro"
-              accent="#065f46"
-              highlight
-              name="Profesional"
-              price="$399"
-              period="/ mes MXN"
-              features={[
-                'Donantes ilimitados',
-                'Hasta 500 CFDIs al mes',
-                'Módulo PLD / AML completo',
-                'Avisos UIF y matriz de riesgo',
-                'Declaración anual (Título III LISR)',
-                'Ficha de transparencia pública en PDF',
-                'Soporte por correo y chat',
-              ]}
-              cta="Elegir Profesional"
-              onClick={() => navigate('/register')}
-            />
-            <PriceCard
-              testid="donataria-plan-enterprise"
-              accent="#10B981"
-              name="Multi-Donataria"
-              price="A medida"
-              period=""
-              features={[
-                'Múltiples donatarias en una cuenta',
-                'Roles y permisos granulares (RBAC)',
-                'Onboarding e implementación',
-                'Capacitación PLD y LISR para equipo',
-                'API de integración',
-                'CSM dedicado',
-              ]}
-              cta="Hablar con ventas"
-              onClick={() => navigate('/register')}
-            />
+            <PriceCard testid="donataria-plan-free" accent="#0EA5E9" name="Esencial" price="$0" period="/ mes — para siempre" features={['Hasta 25 donantes activos','Hasta 50 CFDIs al mes','Calendario fiscal básico','Dashboard y reportes operativos','Comunidad y centro de ayuda']} cta="Empezar gratis" onClick={() => navigate('/register')} />
+            <PriceCard testid="donataria-plan-pro" accent="#065f46" highlight name="Profesional" price="$399" period="/ mes MXN" features={['Donantes ilimitados','Hasta 500 CFDIs al mes','Módulo PLD / AML completo','Avisos UIF y matriz de riesgo','Declaración anual (Título III LISR)','Ficha de transparencia pública en PDF','Soporte por correo y chat']} cta="Elegir Profesional" onClick={() => navigate('/register')} />
+            <PriceCard testid="donataria-plan-enterprise" accent="#10B981" name="Multi-Donataria" price="A medida" period="" features={['Múltiples donatarias en una cuenta','Roles y permisos granulares (RBAC)','Onboarding e implementación','Capacitación PLD y LISR para equipo','API de integración','CSM dedicado']} cta="Hablar con ventas" onClick={() => navigate('/register')} />
           </div>
           <div style={{ marginTop: 28, fontSize: 13, color: '#64748b' }}>
             Precios en pesos mexicanos. IVA no incluido. Timbrado de CFDI con costo adicional según PAC.
@@ -519,7 +403,6 @@ function LandingDonataria({ onSwitch }) {
         </div>
       </section>
 
-      {/* LEGAL */}
       <section id="legal" style={{ background: '#F8FAFC', padding: '72px 48px' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 40 }}>
@@ -544,7 +427,6 @@ function LandingDonataria({ onSwitch }) {
         </div>
       </section>
 
-      {/* CTA */}
       <section style={{ background: 'linear-gradient(135deg,#064E3B,#065f46)', padding: '72px 48px', textAlign: 'center' }}>
         <h2 style={{ fontSize: 36, fontWeight: 800, color: 'white', marginBottom: 14, letterSpacing: '-.02em' }}>Tu donataria cumplida desde hoy</h2>
         <p style={{ fontSize: 15, color: 'rgba(255,255,255,.7)', marginBottom: 30 }}>Sin instalaciones, sin contratos largos. Empieza en 5 minutos.</p>
@@ -559,7 +441,6 @@ function LandingDonataria({ onSwitch }) {
   );
 }
 
-// ── Componente principal ───────────────────────────────────
 export default function LandingPage() {
   const [vista, setVista] = useState('donataria');
   return vista === 'taxnfin'
