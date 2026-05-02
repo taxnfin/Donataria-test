@@ -303,7 +303,8 @@ function LandingDonataria({ onSwitch }) {
           <LogoDonataria />
           <span style={{ fontSize: 11, color: '#94a3b8', padding: '3px 8px', background: '#f1f5f9', borderRadius: 99, fontWeight: 600 }}>by TaxnFin</span>
         </div>
-        <div style={{ display: 'flex', gap: 28, fontSize: 14, color: '#475569' }}>
+        <div style={{ display: 'flex', gap: 28, fontSize: 14, color: '#475569', alignItems: 'center' }}>
+          <a href="https://taxnfin.com" style={{ fontSize: 12, color: '#94a3b8', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, borderRight: '1px solid #e2e8f0', paddingRight: 20 }}>← taxnfin.com</a>
           {[
             { l: 'Funcionalidades', h: '#funcionalidades' },
             { l: 'Precios', h: '#precios' },
