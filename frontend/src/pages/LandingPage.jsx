@@ -318,11 +318,7 @@ function LandingDonataria({ onSwitch }) {
         </div>
       </nav>
 
-      {/* TABS */}
-      <div style={{ background: '#f8fafc', display: 'flex', padding: '0 48px', borderBottom: '1px solid #e2e8f0' }}>
-        <button onClick={() => window.location.href='https://taxnfin.com'} style={{ padding: '10px 18px', fontSize: 12, color: '#64748b', background: 'none', border: 'none', borderBottom: '2px solid transparent', cursor: 'pointer' }} data-testid="switch-taxnfin-tab">← Cashflow TaxnFin</button>
-        <button style={{ padding: '10px 18px', fontSize: 12, fontWeight: 600, color: '#065f46', background: 'none', border: 'none', borderBottom: '2px solid #10B981', cursor: 'pointer' }}>donatariasat.taxnfin.com</button>
-      </div>
+
 
       <section style={{ background: 'linear-gradient(135deg,#064E3B 0%,#065f46 100%)', padding: '80px 48px', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, opacity: .07, backgroundImage: 'radial-gradient(circle at 20% 30%, white 1px, transparent 1px), radial-gradient(circle at 80% 70%, white 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
